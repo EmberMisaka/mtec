@@ -1,0 +1,153 @@
+/* Views das abas Entradas, Saídas, Requisições e Inventário */
+/* ---------- ENTRADAS ---------- */
+function renderEntradas(){
+  document.getElementById('view-title').textContent = 'Entradas';
+  document.getElementById('fab').innerHTML = '';
+  const recentes = state.movements.filter(m=>m.type==='entrada').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,25);
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div class="field"><label>Item</label><select id="e-item">${itemOptions(null)}</select></div>
+      <div class="row-2">
+        <div class="field"><label>Quantidade</label><input type="number" id="e-qty" min="1" value="1"></div>
+        <div class="field"><label>Data</label><input type="date" id="e-date" value="${todayISO()}"></div>
+      </div>
+      <div class="field"><label>Fornecedor / nota fiscal</label><input type="text" id="e-note" placeholder="Opcional"></div>
+      <button class="btn btn-teal" onclick="registerEntrada()">Registrar entrada</button>
+    </div>
+    <div class="section-label">Últimas entradas</div>
+    ${recentes.length===0?'<div class="empty">Nenhuma entrada registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
+  `;
+}
+
+/* ---------- SAÍDAS ---------- */
+function renderSaidas(){
+  document.getElementById('view-title').textContent = 'Saídas';
+  document.getElementById('fab').innerHTML = '';
+  const recentes = state.movements.filter(m=>m.type==='saida').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,25);
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div class="field"><label>Item</label><select id="s-item">${itemOptions(null)}</select></div>
+      <div class="row-2">
+        <div class="field"><label>Quantidade</label><input type="number" id="s-qty" min="1" value="1"></div>
+        <div class="field"><label>Data</label><input type="date" id="s-date" value="${todayISO()}"></div>
+      </div>
+      <div class="row-2">
+        <div class="field"><label>Retirado por</label><input type="text" id="s-person" placeholder="Nome"></div>
+        <div class="field"><label>Setor / destino</label><input type="text" id="s-dest" placeholder="Opcional"></div>
+      </div>
+      <button class="btn btn-rust" onclick="registerSaida()">Registrar saída</button>
+    </div>
+    <div class="section-label">Últimas saídas</div>
+    ${recentes.length===0?'<div class="empty">Nenhuma saída registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
+  `;
+}
+
+function movementCard(m){
+  const item = itemById(m.itemId);
+  if(!item) return '';
+  const cls = m.type==='entrada'?'stamp-entrada':(m.type==='saida'?'stamp-saida':'stamp-ajuste');
+  const label = m.type==='entrada'?'Entrada':(m.type==='saida'?'Saída':'Ajuste');
+  const sign = m.type==='entrada' ? '+' : (m.type==='saida' ? '-' : (m.qty>=0?'+':''));
+  return `<div class="card">
+    <div class="item-row">
+      <div>
+        <div class="name">${esc(item.name)}</div>
+        <div class="sub">${fmtDate(m.date)}${m.note?' · '+esc(m.note):''}</div>
+      </div>
+      <div class="stock"><div class="q mono">${sign}${Math.abs(m.qty)}</div></div>
+    </div>
+    <div style="margin-top:8px;"><span class="stamp ${cls}">${label}</span></div>
+  </div>`;
+}
+
+
+/* ---------- REQUISIÇÕES ---------- */
+function renderRequisicoes(){
+  document.getElementById('view-title').textContent = 'Requisições';
+  const list = [...state.requisicoes].sort((a,b)=>{
+    const order = {pendente:0, atendida:1, cancelada:2};
+    if(order[a.status]!==order[b.status]) return order[a.status]-order[b.status];
+    return b.date.localeCompare(a.date);
+  });
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div class="row-2">
+        <div class="field"><label>Solicitante</label><input type="text" id="r-person" placeholder="Nome"></div>
+        <div class="field"><label>Setor</label><input type="text" id="r-sector" placeholder="Opcional"></div>
+      </div>
+      <div class="field"><label>Item</label><select id="r-item">${itemOptions(null)}</select></div>
+      <div class="row-2">
+        <div class="field"><label>Quantidade</label><input type="number" id="r-qty" min="1" value="1"></div>
+        <div class="field"><label>Data</label><input type="date" id="r-date" value="${todayISO()}"></div>
+      </div>
+      <div class="field"><label>Observação</label><input type="text" id="r-note" placeholder="Opcional"></div>
+      <button class="btn btn-primary" onclick="registerRequisicao()">Criar requisição</button>
+    </div>
+    <div class="section-label">Todas as requisições</div>
+    ${list.length===0?'<div class="empty">Nenhuma requisição criada ainda</div>':list.map(r=>requisicaoCard(r)).join('')}
+  `;
+  document.getElementById('fab').innerHTML = '';
+}
+function requisicaoCard(r){
+  const item = itemById(r.itemId);
+  return `<div class="card">
+    <div class="item-row">
+      <div>
+        <div class="name">${item?esc(item.name):'(item removido)'}</div>
+        <div class="sub">${esc(r.requester||'—')}${r.sector?' · '+esc(r.sector):''} · ${fmtDate(r.date)}</div>
+        ${r.note?`<div class="sub">${esc(r.note)}</div>`:''}
+      </div>
+      <div class="stock"><div class="q mono">${r.qty}</div></div>
+    </div>
+    <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
+      <span class="badge st-${r.status}">${r.status}</span>
+      ${r.status==='pendente'?`<div style="display:flex;gap:6px;">
+        <button class="btn btn-sm btn-teal" onclick="atenderRequisicao('${r.id}')">Atender</button>
+        <button class="btn btn-sm" onclick="cancelarRequisicao('${r.id}')">Cancelar</button>
+      </div>`:''}
+    </div>
+  </div>`;
+}
+
+/* ---------- INVENTÁRIO ---------- */
+function renderInventario(){
+  document.getElementById('view-title').textContent = 'Inventário';
+  document.getElementById('fab').innerHTML = '';
+  const ajustes = state.movements.filter(m=>m.type==='ajuste').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,15);
+
+  let rows = '';
+  CATEGORIES.forEach(cat=>{
+    const items = state.items.filter(i=>i.category===cat);
+    if(items.length===0) return;
+    rows += `<div class="section-label">${cat}</div>`;
+    items.forEach(i=>{
+      const counted = inventoryCounts[i.id] !== undefined ? inventoryCounts[i.id] : i.currentStock;
+      const diff = counted - i.currentStock;
+      rows += `<div class="card">
+        <div class="item-row">
+          <div>
+            <div class="name">${esc(i.name)}</div>
+            <div class="sub">Sistema: ${i.currentStock} ${esc(i.unit)}</div>
+          </div>
+          <div style="width:90px;">
+            <input type="number" value="${counted}" oninput="inventoryCounts['${i.id}']=Number(this.value); renderInventario();">
+          </div>
+        </div>
+        <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;">
+          <span class="${diff===0?'hint':(diff>0?'diffplus':'diffminus')}">${diff===0?'Sem diferença':(diff>0?'+'+diff+' a mais':diff+' a menos')}</span>
+          ${diff!==0?`<button class="btn btn-sm btn-primary" onclick="aplicarAjuste('${i.id}')">Aplicar ajuste</button>`:''}
+        </div>
+      </div>`;
+    });
+  });
+
+  document.getElementById('main').innerHTML = `
+    <div class="card">
+      <div class="field"><label>Responsável pela contagem</label><input type="text" id="inv-resp" value="${esc(inventoryResponsible)}" oninput="inventoryResponsible=this.value;" placeholder="Nome de quem está contando"></div>
+      <div class="hint">Digite a quantidade física contada de cada item. Diferenças são aplicadas individualmente.</div>
+    </div>
+    ${rows}
+    <div class="section-label">Últimos ajustes</div>
+    ${ajustes.length===0?'<div class="empty">Nenhum ajuste de inventário ainda</div>':ajustes.map(m=>movementCard(m)).join('')}
+  `;
+}
