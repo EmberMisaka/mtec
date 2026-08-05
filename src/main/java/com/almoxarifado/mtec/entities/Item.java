@@ -1,41 +1,40 @@
 package com.almoxarifado.mtec.entities;
 
 import jakarta.persistence.*;
-
-import java.io.Serial;
-import java.io.Serializable;
-import java.util.Objects;
+import java.math.BigDecimal;
 
 @Entity
-@Table(name = "tb_item")
-public class Item implements Serializable {
-
-    @Serial
-    private static final long serialVersionUID = 1L;
+@Table(name = "item")
+public class Item {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
     private String nome;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "categoria_id", nullable = false)
+    private Categoria categoria;
+
     private String unidade;
+
+    @Column(name = "estoque_minimo")
     private Integer estoqueMinimo;
+
+    @Column(name = "estoque_atual")
     private Integer estoqueAtual;
+
     private String marca;
-    private Double precoCusto;
-    private String imageUrl;
 
-    public Item(){}
+    @Column(name = "preco_custo")
+    private BigDecimal precoCusto;
 
-    public Item(Long id, String nome, String unidade, Integer estoqueMinimo, Integer estoqueAtual, String marca, Double precoCusto, String imageUrl) {
-        this.id = id;
-        this.nome = nome;
-        this.unidade = unidade;
-        this.estoqueMinimo = estoqueMinimo;
-        this.estoqueAtual = estoqueAtual;
-        this.marca = marca;
-        this.precoCusto = precoCusto;
-        this.imageUrl = imageUrl;
+    @Column(name = "imagem_url")
+    private String imagemUrl;
+
+    public Item() {
     }
 
     public Long getId() {
@@ -52,6 +51,14 @@ public class Item implements Serializable {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public Categoria getCategoria() {
+        return categoria;
+    }
+
+    public void setCategoria(Categoria categoria) {
+        this.categoria = categoria;
     }
 
     public String getUnidade() {
@@ -86,31 +93,19 @@ public class Item implements Serializable {
         this.marca = marca;
     }
 
-    public Double getPrecoCusto() {
+    public BigDecimal getPrecoCusto() {
         return precoCusto;
     }
 
-    public void setPrecoCusto(Double precoCusto) {
+    public void setPrecoCusto(BigDecimal precoCusto) {
         this.precoCusto = precoCusto;
     }
 
-    public String getImageUrl() {
-        return imageUrl;
+    public String getImagemUrl() {
+        return imagemUrl;
     }
 
-    public void setImageUrl(String imageUrl) {
-        this.imageUrl = imageUrl;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        Item that = (Item) o;
-        return Objects.equals(getId(), that.getId()) && Objects.equals(getNome(), that.getNome()) && Objects.equals(getUnidade(), that.getUnidade()) && Objects.equals(getEstoqueMinimo(), that.getEstoqueMinimo()) && Objects.equals(getEstoqueAtual(), that.getEstoqueAtual()) && Objects.equals(getMarca(), that.getMarca()) && Objects.equals(getPrecoCusto(), that.getPrecoCusto()) && Objects.equals(getImageUrl(), that.getImageUrl());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(getId());
+    public void setImagemUrl(String imagemUrl) {
+        this.imagemUrl = imagemUrl;
     }
 }

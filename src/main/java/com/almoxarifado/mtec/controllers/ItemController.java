@@ -2,32 +2,45 @@ package com.almoxarifado.mtec.controllers;
 
 import com.almoxarifado.mtec.entities.Item;
 import com.almoxarifado.mtec.services.ItemService;
-import org.apache.coyote.Response;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/items")
+@RequestMapping("/api/itens")
 public class ItemController {
 
-    @Autowired
-    private ItemService service;
+    private final ItemService itemService;
 
-    @GetMapping
-    public ResponseEntity<List<Item>> findAll(){
-        List<Item> list = service.findAll();
-        return ResponseEntity.ok().body(list);
+    public ItemController(ItemService itemService) {
+        this.itemService = itemService;
     }
 
-    @GetMapping(value = "/{id}")
-    public ResponseEntity<Item> findById(@PathVariable Long id){
-        Item obj = service.findById(id);
-        return ResponseEntity.ok().body(obj);
+    @GetMapping
+    public List<Item> listar() {
+        return itemService.listarTodos();
+    }
+
+    @GetMapping("/{id}")
+    public Item buscarPorId(@PathVariable Long id) {
+        return itemService.buscarPorId(id);
+    }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public Item criar(@RequestBody Item item) {
+        return itemService.criar(item);
+    }
+
+    @PutMapping("/{id}")
+    public Item atualizar(@PathVariable Long id, @RequestBody Item item) {
+        return itemService.atualizar(id, item);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletar(@PathVariable Long id) {
+        itemService.deletar(id);
     }
 }
