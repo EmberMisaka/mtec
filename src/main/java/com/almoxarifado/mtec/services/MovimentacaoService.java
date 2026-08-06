@@ -20,6 +20,10 @@ public class MovimentacaoService {
         this.itemService = itemService;
     }
 
+    public List<Movimentacao> listarTodas() {
+        return movimentacaoRepository.findAllByOrderByDataDesc();
+    }
+
     public List<Movimentacao> listarPorItem(Long itemId) {
         Item item = itemService.buscarPorId(itemId);
         return movimentacaoRepository.findByItemOrderByDataDesc(item);

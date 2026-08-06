@@ -22,8 +22,8 @@ function renderEstoque(){
       items.forEach(i=>{
         const low = i.currentStock < i.minStock;
         const thumb = i.image
-          ? `<img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border);flex:none;">`
-          : `<div style="width:40px;height:40px;border-radius:6px;background:var(--gray-bg);flex:none;"></div>`;
+            ? `<img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border);flex:none;">`
+            : `<div style="width:40px;height:40px;border-radius:6px;background:var(--gray-bg);flex:none;"></div>`;
         list += `<div class="card">
           <div class="item-row">
             <div style="display:flex;gap:10px;align-items:center;min-width:0;">
@@ -83,7 +83,7 @@ function openItemModal(id){
       <div class="field"><label>Estoque mínimo</label><input type="number" id="f-min" min="0" value="${editing?editing.minStock:0}"></div>
     </div>
     <div class="row-2">
-      <div class="field"><label>Estoque atual</label><input type="number" id="f-current" min="0" value="${editing?editing.currentStock:0}"></div>
+      <div class="field"><label>Estoque atual</label><input type="number" id="f-current" min="0" value="${editing?editing.currentStock:0}" ${editing?'disabled title="Para alterar o estoque de um item existente, use Entradas, Saídas ou Inventário."':''}></div>
       <div class="field"><label>Preço de custo (R$)</label><input type="number" id="f-cost" min="0" step="0.01" value="${editing?(editing.costPrice||0):0}"></div>
     </div>
     <div class="field">

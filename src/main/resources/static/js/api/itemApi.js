@@ -2,9 +2,9 @@
 let pendingImage = null;
 function imagePreviewHTML(){
   return pendingImage
-    ? `<img src="${pendingImage}" style="width:100%;max-width:160px;height:110px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border);margin-bottom:6px;display:block;">
+      ? `<img src="${pendingImage}" style="width:100%;max-width:160px;height:110px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border);margin-bottom:6px;display:block;">
        <button type="button" class="btn btn-sm" onclick="removePendingImage()">Remover imagem</button>`
-    : `<div style="width:100%;max-width:160px;height:80px;border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:12px;margin-bottom:6px;">Sem imagem</div>`;
+      : `<div style="width:100%;max-width:160px;height:80px;border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:12px;margin-bottom:6px;">Sem imagem</div>`;
 }
 function refreshImagePreview(){
   const wrap = document.getElementById('f-image-preview-wrap');
@@ -55,16 +55,20 @@ async function saveItem(id){
   const cur = Number(document.getElementById('f-current').value) || 0;
   const cost = Number(document.getElementById('f-cost').value) || 0;
   if(!name){ showToast('Informe o nome do item'); return; }
-  if(id){
-    const it = itemById(id);
-    Object.assign(it, {name,category,unit,minStock:min,currentStock:cur,brand,costPrice:cost,image:pendingImage});
-  } else {
-    state.items.push(mkItem(name,category,unit,min,cur,brand,cost,pendingImage));
+  const payload = mapItemToApi({name, category, unit, minStock:min, currentStock:cur, brand, costPrice:cost, image:pendingImage});
+  try{
+    if(id){
+      await apiFetch(`/itens/${id}`, {method:'PUT', body:JSON.stringify(payload)});
+    } else {
+      await apiFetch('/itens', {method:'POST', body:JSON.stringify(payload)});
+    }
+    await fetchItems();
+    closeModal();
+    renderEstoque();
+    showToast('Item salvo');
+  }catch(err){
+    showToast(err.message || 'Erro ao salvar item');
   }
-  await saveState();
-  closeModal();
-  renderEstoque();
-  showToast('Item salvo');
 }
 
 function removeAccents(s){ return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,''); }
@@ -166,22 +170,29 @@ async function handleSpreadsheetSelect(e){
 async function confirmImport(){
   if(pendingImportRows.length===0){ showToast('Nenhum item para importar'); return; }
   let created=0, updated=0;
-  pendingImportRows.forEach(r=>{
+  for(const r of pendingImportRows){
     const existing = state.items.find(i=>i.name.trim().toLowerCase()===r.name.trim().toLowerCase());
-    if(existing){
-      existing.category = r.category || existing.category;
-      existing.brand = r.brand || existing.brand;
-      existing.unit = r.unit || existing.unit;
-      existing.minStock = r.minStock;
-      if(r.hasCurrentCol) existing.currentStock = r.currentStock;
-      existing.costPrice = r.costPrice || existing.costPrice;
-      updated++;
-    } else {
-      state.items.push(mkItem(r.name, r.category||'Limpeza', r.unit||'un', r.minStock, r.currentStock, r.brand, r.costPrice, null));
-      created++;
-    }
-  });
-  await saveState();
+    const payload = mapItemToApi({
+      name: r.name,
+      category: r.category || (existing ? existing.category : CATEGORIES[0]),
+      unit: r.unit || (existing ? existing.unit : 'un'),
+      minStock: r.minStock,
+      currentStock: r.hasCurrentCol ? r.currentStock : (existing ? existing.currentStock : r.currentStock),
+      brand: r.brand || (existing ? existing.brand : ''),
+      costPrice: r.costPrice || (existing ? existing.costPrice : 0),
+      image: existing ? existing.image : null
+    });
+    try{
+      if(existing){
+        await apiFetch(`/itens/${existing.id}`, {method:'PUT', body:JSON.stringify(payload)});
+        updated++;
+      } else {
+        await apiFetch('/itens', {method:'POST', body:JSON.stringify(payload)});
+        created++;
+      }
+    }catch(err){ console.error('Falha ao importar', r.name, err); }
+  }
+  await fetchItems();
   closeModal();
   pendingImportRows = []; pendingImportErrors = [];
   renderEstoque();
@@ -189,10 +200,14 @@ async function confirmImport(){
 }
 async function deleteItem(id){
   if(!confirm('Excluir este item do almoxarifado?')) return;
-  state.items = state.items.filter(i=>i.id!==id);
-  await saveState();
-  closeModal();
-  renderEstoque();
-  showToast('Item excluído');
+  try{
+    await apiFetch(`/itens/${id}`, {method:'DELETE'});
+    await fetchItems();
+    closeModal();
+    renderEstoque();
+    showToast('Item excluído');
+  }catch(err){
+    showToast(err.message || 'Erro ao excluir item');
+  }
 }
 

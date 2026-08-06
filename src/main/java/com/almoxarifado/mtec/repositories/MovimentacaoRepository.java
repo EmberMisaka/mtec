@@ -9,4 +9,6 @@ import java.util.List;
 public interface MovimentacaoRepository extends JpaRepository<Movimentacao, Long> {
 
     List<Movimentacao> findByItemOrderByDataDesc(Item item);
+
+    List<Movimentacao> findAllByOrderByDataDesc();
 }

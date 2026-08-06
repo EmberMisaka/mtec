@@ -20,6 +20,11 @@ public class MovimentacaoController {
         this.movimentacaoService = movimentacaoService;
     }
 
+    @GetMapping
+    public List<Movimentacao> listar() {
+        return movimentacaoService.listarTodas();
+    }
+
     @GetMapping("/item/{itemId}")
     public List<Movimentacao> listarPorItem(@PathVariable Long itemId) {
         return movimentacaoService.listarPorItem(itemId);

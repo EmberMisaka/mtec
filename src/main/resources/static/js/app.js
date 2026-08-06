@@ -1,5 +1,6 @@
 /* Estado global, constantes e utilidades da aplicação */
-const CATEGORIES = ['Limpeza','Escritório','Café'];
+let CATEGORIES = [];
+let categoriaIdPorNome = {};
 const TABS = [
   {id:'estoque', label:'Estoque', icon:'<path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>'},
   {id:'entradas', label:'Entradas', icon:'<path d="M12 3v10"/><path d="M8 9l4 4 4-4"/><path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/>'},
@@ -16,49 +17,98 @@ let stockFilter = {search:'', category:'Todos'};
 let inventoryResponsible = '';
 let inventoryCounts = {};
 
-function genId(p){ return p+'_'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
-function mkItem(name,category,unit,minStock,currentStock,brand='',costPrice=0,image=null){
-  return {id:genId('it'), name, category, unit, minStock, currentStock, brand, costPrice, image};
+/* ---------- CAMADA HTTP ----------
+   Ponto único de conversa com o backend. Toda função de api/*.js passa por aqui. */
+const API_BASE = '/api';
+
+async function apiFetch(path, options={}){
+  const res = await fetch(API_BASE + path, {
+    headers: {'Content-Type':'application/json'},
+    ...options
+  });
+  if(!res.ok){
+    let msg = 'Erro na requisição ('+res.status+')';
+    try{ const body = await res.json(); if(body.erro) msg = body.erro; }catch(e){}
+    throw new Error(msg);
+  }
+  if(res.status === 204) return null;
+  return res.json();
 }
-function seedState(){
+
+/* ---------- ADAPTADORES ----------
+   O backend fala PT-BR e usa objeto aninhado pra categoria (Item.categoria = {id, nome}).
+   O restante do app (views) fala o "dialeto" original em EN. Essas funções traduzem
+   nos dois sentidos, então nada em views/estoque.js e views/movimentacoes.js precisa mudar. */
+function mapItemFromApi(it){
   return {
-    items:[
-      mkItem('Álcool em gel 500ml','Limpeza','un',10,24),
-      mkItem('Detergente neutro 500ml','Limpeza','un',8,15),
-      mkItem('Desinfetante 1L','Limpeza','un',6,4),
-      mkItem('Papel higiênico (fardo)','Limpeza','fardo',4,9),
-      mkItem('Sabonete líquido 250ml','Limpeza','un',6,11),
-      mkItem('Pano multiuso','Limpeza','un',10,20),
-      mkItem('Papel A4 (resma)','Escritório','resma',10,18),
-      mkItem('Caneta esferográfica azul','Escritório','un',20,45),
-      mkItem('Grampeador','Escritório','un',3,5),
-      mkItem('Grampos 26/6 (caixa)','Escritório','cx',5,8),
-      mkItem('Bloco de post-it','Escritório','un',6,10),
-      mkItem('Toner para impressora','Escritório','un',2,1),
-      mkItem('Café torrado e moído 500g','Café','pct',10,22),
-      mkItem('Açúcar refinado 1kg','Café','pct',6,9),
-      mkItem('Filtro de papel 103','Café','pct',8,14),
-      mkItem('Copo descartável 50ml','Café','pct',10,6),
-      mkItem('Adoçante','Café','un',4,7)
-    ],
-    movements:[],
-    requisicoes:[]
+    id: it.id,
+    name: it.nome,
+    category: it.categoria ? it.categoria.nome : '',
+    unit: it.unidade,
+    minStock: it.estoqueMinimo,
+    currentStock: it.estoqueAtual,
+    brand: it.marca,
+    costPrice: it.precoCusto,
+    image: it.imagemUrl
+  };
+}
+function mapItemToApi(item){
+  return {
+    nome: item.name,
+    categoria: {id: categoriaIdPorNome[item.category]},
+    unidade: item.unit,
+    estoqueMinimo: item.minStock,
+    estoqueAtual: item.currentStock,
+    marca: item.brand,
+    precoCusto: item.costPrice,
+    imagemUrl: item.image
+  };
+}
+function mapMovimentacaoFromApi(m){
+  return {
+    id: m.id,
+    type: m.tipo.toLowerCase(),
+    itemId: m.item.id,
+    qty: m.quantidade,
+    date: m.data,
+    note: m.observacao
+  };
+}
+function mapRequisicaoFromApi(r){
+  return {
+    id: r.id,
+    requester: r.solicitante,
+    sector: r.setor,
+    itemId: r.item.id,
+    qty: r.quantidade,
+    date: r.data,
+    note: r.observacao,
+    status: r.status.toLowerCase()
   };
 }
 
-async function loadState(){
-  try{
-    const res = await window.storage.get('almoxarifado-estado', true);
-    return res && res.value ? JSON.parse(res.value) : null;
-  }catch(e){ return null; }
+/* ---------- CARREGAMENTO DE DADOS ---------- */
+async function fetchCategorias(){
+  const categorias = await apiFetch('/categorias');
+  CATEGORIES = categorias.map(c=>c.nome);
+  categoriaIdPorNome = {};
+  categorias.forEach(c=>{ categoriaIdPorNome[c.nome] = c.id; });
 }
-async function saveState(){
-  try{ await window.storage.set('almoxarifado-estado', JSON.stringify(state), true); }
-  catch(e){ showToast('Erro ao salvar dados'); console.error(e); }
+async function fetchItems(){
+  const itens = await apiFetch('/itens');
+  state.items = itens.map(mapItemFromApi);
+}
+async function fetchMovimentacoes(){
+  const movs = await apiFetch('/movimentacoes');
+  state.movements = movs.map(mapMovimentacaoFromApi);
+}
+async function fetchRequisicoes(){
+  const reqs = await apiFetch('/requisicoes');
+  state.requisicoes = reqs.map(mapRequisicaoFromApi);
 }
 
 function showToast(msg){
@@ -69,12 +119,13 @@ function showToast(msg){
   t._timer = setTimeout(()=>t.classList.remove('show'), 2200);
 }
 
-function itemById(id){ return state.items.find(i=>i.id===id); }
+/* Comparação tolerante: o <select> devolve string, o backend devolve number (Long) */
+function itemById(id){ return state.items.find(i=>String(i.id)===String(id)); }
 
 function itemOptions(selectedId){
   return CATEGORIES.map(cat=>{
     const opts = state.items.filter(i=>i.category===cat)
-      .map(i=>`<option value="${i.id}" ${i.id===selectedId?'selected':''}>${esc(i.name)}${i.brand?' — '+esc(i.brand):''} (${esc(i.unit)})</option>`).join('');
+        .map(i=>`<option value="${i.id}" ${String(i.id)===String(selectedId)?'selected':''}>${esc(i.name)}${i.brand?' — '+esc(i.brand):''} (${esc(i.unit)})</option>`).join('');
     return opts ? `<optgroup label="${cat}">${opts}</optgroup>` : '';
   }).join('');
 }
@@ -105,13 +156,15 @@ function render(){
 
 async function init(){
   document.getElementById('main').innerHTML = '<div class="empty">Carregando...</div>';
-  let loaded = await loadState();
-  if(!loaded){
-    loaded = seedState();
-    state = loaded;
-    await saveState();
-  } else {
-    state = loaded;
+  state = {items:[], movements:[], requisicoes:[]};
+  try{
+    await fetchCategorias();
+    await Promise.all([fetchItems(), fetchMovimentacoes(), fetchRequisicoes()]);
+  }catch(e){
+    console.error(e);
+    document.getElementById('main').innerHTML = '<div class="empty">Não foi possível conectar ao servidor.</div>';
+    showToast('Erro ao carregar dados do servidor');
+    return;
   }
   render();
 }
