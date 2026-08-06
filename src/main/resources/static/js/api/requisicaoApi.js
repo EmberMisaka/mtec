@@ -4,36 +4,36 @@ async function registerRequisicao(){
   const sector = document.getElementById('r-sector').value.trim();
   const itemId = document.getElementById('r-item').value;
   const qty = Number(document.getElementById('r-qty').value);
-  const date = document.getElementById('r-date').value || todayISO();
   const note = document.getElementById('r-note').value.trim();
   if(!itemId){ showToast('Cadastre um item primeiro'); return; }
   if(!requester){ showToast('Informe o solicitante'); return; }
   if(!qty || qty<=0){ showToast('Informe uma quantidade válida'); return; }
-  state.requisicoes.push({id:genId('rq'), requester, sector, itemId, qty, date, note, status:'pendente'});
-  await saveState();
-  renderRequisicoes();
-  showToast('Requisição criada');
+  try{
+    await apiFetch('/requisicoes', {method:'POST', body:JSON.stringify({itemId:Number(itemId), solicitante:requester, setor:sector, quantidade:qty, observacao:note})});
+    await fetchRequisicoes();
+    renderRequisicoes();
+    showToast('Requisição criada');
+  }catch(err){
+    showToast(err.message || 'Erro ao criar requisição');
+  }
 }
 async function atenderRequisicao(id){
-  const r = state.requisicoes.find(x=>x.id===id);
-  const item = itemById(r.itemId);
-  if(!item){ showToast('Item não encontrado'); return; }
-  if(r.qty > item.currentStock){
-    showToast('Estoque insuficiente para atender ('+item.currentStock+' disponível)');
-    return;
+  try{
+    await apiFetch(`/requisicoes/${id}/atender`, {method:'PUT'});
+    await Promise.all([fetchItems(), fetchMovimentacoes(), fetchRequisicoes()]);
+    renderRequisicoes();
+    showToast('Requisição atendida');
+  }catch(err){
+    showToast(err.message || 'Erro ao atender requisição');
   }
-  item.currentStock -= r.qty;
-  state.movements.push({id:genId('mv'), type:'saida', itemId:item.id, qty:r.qty, date:todayISO(), note:'Requisição de '+r.requester});
-  r.status = 'atendida';
-  await saveState();
-  renderRequisicoes();
-  showToast('Requisição atendida');
 }
 async function cancelarRequisicao(id){
-  const r = state.requisicoes.find(x=>x.id===id);
-  r.status = 'cancelada';
-  await saveState();
-  renderRequisicoes();
-  showToast('Requisição cancelada');
+  try{
+    await apiFetch(`/requisicoes/${id}/cancelar`, {method:'PUT'});
+    await fetchRequisicoes();
+    renderRequisicoes();
+    showToast('Requisição cancelada');
+  }catch(err){
+    showToast(err.message || 'Erro ao cancelar requisição');
+  }
 }
-

@@ -3,7 +3,7 @@
 function renderEntradas(){
   document.getElementById('view-title').textContent = 'Entradas';
   document.getElementById('fab').innerHTML = '';
-  const recentes = state.movements.filter(m=>m.type==='entrada').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,25);
+  const recentes = state.movements.filter(m=>m.type==='entrada').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).slice(0,25);
   document.getElementById('main').innerHTML = `
     <div class="card">
       <div class="field"><label>Item</label><select id="e-item">${itemOptions(null)}</select></div>
@@ -23,7 +23,7 @@ function renderEntradas(){
 function renderSaidas(){
   document.getElementById('view-title').textContent = 'Saídas';
   document.getElementById('fab').innerHTML = '';
-  const recentes = state.movements.filter(m=>m.type==='saida').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,25);
+  const recentes = state.movements.filter(m=>m.type==='saida').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).slice(0,25);
   document.getElementById('main').innerHTML = `
     <div class="card">
       <div class="field"><label>Item</label><select id="s-item">${itemOptions(null)}</select></div>
@@ -47,7 +47,7 @@ function movementCard(m){
   if(!item) return '';
   const cls = m.type==='entrada'?'stamp-entrada':(m.type==='saida'?'stamp-saida':'stamp-ajuste');
   const label = m.type==='entrada'?'Entrada':(m.type==='saida'?'Saída':'Ajuste');
-  const sign = m.type==='entrada' ? '+' : (m.type==='saida' ? '-' : (m.qty>=0?'+':''));
+  const sign = m.type==='entrada' ? '+' : (m.type==='saida' ? '-' : (m.qty>=0?'+':'-'));
   return `<div class="card">
     <div class="item-row">
       <div>
@@ -113,7 +113,7 @@ function requisicaoCard(r){
 function renderInventario(){
   document.getElementById('view-title').textContent = 'Inventário';
   document.getElementById('fab').innerHTML = '';
-  const ajustes = state.movements.filter(m=>m.type==='ajuste').sort((a,b)=>b.date.localeCompare(a.date)||b.id.localeCompare(a.id)).slice(0,15);
+  const ajustes = state.movements.filter(m=>m.type==='ajuste').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).slice(0,15);
 
   let rows = '';
   CATEGORIES.forEach(cat=>{
