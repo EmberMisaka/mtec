@@ -107,3 +107,95 @@
   .diffplus{color:var(--teal);font-family:'IBM Plex Mono';font-weight:600;}
   .diffminus{color:var(--rust);font-family:'IBM Plex Mono';font-weight:600;}
   .hint{font-size:11.5px;color:var(--ink-3);margin-top:2px;}
+
+  /* ---------- Estados de interação (mouse only, respeita reduced-motion) ---------- */
+  @media (hover:hover){
+    .btn:hover{filter:brightness(0.96);}
+    .card:hover{border-color:var(--ink-3);}
+    .chip:hover{border-color:var(--ink-3);}
+    nav.bottom button:hover{color:var(--ink);}
+  }
+  @media (prefers-reduced-motion: reduce){
+    *{transition:none !important;animation:none !important;}
+  }
+  .btn:focus-visible,.chip:focus-visible,nav.bottom button:focus-visible{
+    outline:2px solid var(--teal);outline-offset:1px;
+  }
+
+  /* ---------- Layout desktop: navegação lateral fixa + conteúdo centralizado ----------
+     Tudo aqui é aditivo — nenhuma regra acima foi alterada, o comportamento
+     mobile continua idêntico ao que já existia. */
+  @media (min-width: 1030px){
+    html,body{background:var(--gray-bg);}
+
+    #app{
+      max-width:1120px;
+      min-height:calc(100vh - 48px);
+      margin:24px auto;
+      border:0.5px solid var(--border);
+      border-radius:18px;
+      overflow:hidden;
+      box-shadow:0 1px 2px rgba(31,29,24,0.05),0 16px 40px -20px rgba(31,29,24,0.18);
+      display:grid;
+      /* grid-template-columns:224px 1fr; */
+      grid-template-rows:auto 1fr auto;
+      grid-template-areas:
+      "header header"
+      "nav main"
+      "fab main";
+}
+
+header{grid-area:header;padding:20px 32px 16px;}
+header h1{font-size:22px;}
+
+main{grid-area:main;padding:24px 32px 56px;max-width:760px;}
+
+nav.bottom{
+  grid-area:nav;
+  position:static;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+  gap:2px;
+  padding:20px 12px;
+  border-top:none;
+  border-right:0.5px solid var(--border);
+  background:var(--surface);
+}
+nav.bottom button{
+  flex-direction:row;
+  justify-content:flex-start;
+  gap:10px;
+  padding:10px 12px;
+  font-size:13px;
+  border-radius:8px;
+  transition:background .12s,color .12s;
+}
+nav.bottom button svg{width:18px;height:18px;}
+nav.bottom button.active{background:var(--teal-bg);}
+
+    .fab{
+      grid-area:fab;
+      position:static;
+      top:auto;left:auto;right:auto;bottom:auto;transform:none;
+      max-width:none;width:auto;margin:0;
+      padding:12px;
+      border-top:0.5px solid var(--border);
+      display:block;
+    }
+    .fab > div{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .fab button{
+      flex:none !important;
+      width:100% !important;
+      justify-content:flex-start;
+    }
+
+.overlay{align-items:center;}
+.sheet{max-width:480px;border-radius:16px;max-height:85vh;box-shadow:0 24px 60px -24px rgba(31,29,24,0.35);}
+
+.toast{bottom:32px;}
+}
