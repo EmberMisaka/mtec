@@ -19,6 +19,9 @@ public class DataBasePopulation implements CommandLineRunner {
     @Override
     public void run(String... args) {
 
+        if (categoriaRepository.count() > 0) {
+            return;
+        }
         List<Categoria> categorias = List.of(
                 new Categoria("Informática"),
                 new Categoria("Periféricos"),

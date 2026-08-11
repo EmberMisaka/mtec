@@ -199,3 +199,5 @@ nav.bottom button.active{background:var(--teal-bg);}
 
 .toast{bottom:32px;}
 }
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
+  #app.hidden,#login-screen.hidden{display:none;}

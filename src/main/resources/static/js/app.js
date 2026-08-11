@@ -11,6 +11,7 @@ const TABS = [
 
 let state = null;
 let currentTab = 'estoque';
+let usuarioAtual = null;
 let pendingImportRows = [];
 let pendingImportErrors = [];
 let stockFilter = {search:'', category:'Todos'};
@@ -154,7 +155,17 @@ function render(){
   else if(currentTab==='inventario') renderInventario();
 }
 
-async function init(){
+async function checkAuth(){
+  try{
+    usuarioAtual = await apiFetch('/auth/me');
+    return true;
+  }catch(err){
+    usuarioAtual = null;
+    return false;
+  }
+}
+
+async function carregarDados(){
   document.getElementById('main').innerHTML = '<div class="empty">Carregando...</div>';
   state = {items:[], movements:[], requisicoes:[]};
   try{
@@ -167,5 +178,29 @@ async function init(){
     return;
   }
   render();
+}
+
+async function checkAuth(){
+  try{
+    usuarioAtual = await apiFetch('/auth/me');
+    return true;
+  }catch(err){
+    usuarioAtual = null;
+    return false;
+  }
+}
+
+async function logout(){
+  try{ await apiFetch('/auth/logout', {method:'POST'}); }catch(err){}
+  window.location.href = 'login.html';
+}
+
+async function init(){
+  const autenticado = await checkAuth();
+  if(!autenticado){
+    window.location.href = 'login.html';
+    return;
+  }
+  await carregarDados();
 }
 init();
