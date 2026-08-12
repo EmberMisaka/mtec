@@ -8,6 +8,8 @@ const TABS = [
   {id:'requisicoes', label:'Requisições', icon:'<rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4V2h6v2"/><path d="M9 10h6M9 14h6"/>'},
   {id:'inventario', label:'Inventário', icon:'<path d="M4 6h2M4 12h2M4 18h2"/><path d="M9 6h11M9 12h11M9 18h11"/>'}
 ];
+/* Aba de usuários: só aparece para administradores (cadastro de usuário é restrito ao ADMIN) */
+const TAB_USUARIOS = {id:'usuarios', label:'Usuários', icon:'<path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>'};
 
 let state = null;
 let currentTab = 'estoque';
@@ -54,7 +56,9 @@ function mapItemFromApi(it){
     currentStock: it.estoqueAtual,
     brand: it.marca,
     costPrice: it.precoCusto,
-    image: it.imagemUrl
+    // A imagem agora é um arquivo binário guardado no backend (não mais uma URL de texto).
+    // "?v=" evita que o navegador mostre uma versão antiga em cache após trocar a imagem.
+    image: it.temImagem ? (API_BASE + '/itens/' + it.id + '/imagem?v=' + Date.now()) : null
   };
 }
 function mapItemToApi(item){
@@ -65,8 +69,7 @@ function mapItemToApi(item){
     estoqueMinimo: item.minStock,
     estoqueAtual: item.currentStock,
     marca: item.brand,
-    precoCusto: item.costPrice,
-    imagemUrl: item.image
+    precoCusto: item.costPrice
   };
 }
 function mapMovimentacaoFromApi(m){
@@ -111,6 +114,9 @@ async function fetchRequisicoes(){
   const reqs = await apiFetch('/requisicoes');
   state.requisicoes = reqs.map(mapRequisicaoFromApi);
 }
+async function fetchUsuarios(){
+  state.usuarios = await apiFetch('/usuarios');
+}
 
 function showToast(msg){
   const t = document.getElementById('toast');
@@ -133,9 +139,15 @@ function itemOptions(selectedId){
 
 
 /* ---------- NAV ---------- */
+function isAdmin(){ return !!usuarioAtual && usuarioAtual.perfil === 'ADMIN'; }
+
+function visibleTabs(){
+  return isAdmin() ? [...TABS, TAB_USUARIOS] : TABS;
+}
+
 function renderNav(){
   const nav = document.getElementById('bottom-nav');
-  nav.innerHTML = TABS.map(t=>`
+  nav.innerHTML = visibleTabs().map(t=>`
     <button class="${t.id===currentTab?'active':''}" onclick="setTab('${t.id}')">
       <svg viewBox="0 0 24 24">${t.icon}</svg>
       <span>${t.label}</span>
@@ -153,6 +165,7 @@ function render(){
   else if(currentTab==='saidas') renderSaidas();
   else if(currentTab==='requisicoes') renderRequisicoes();
   else if(currentTab==='inventario') renderInventario();
+  else if(currentTab==='usuarios') renderUsuarios();
 }
 
 async function checkAuth(){
@@ -167,10 +180,12 @@ async function checkAuth(){
 
 async function carregarDados(){
   document.getElementById('main').innerHTML = '<div class="empty">Carregando...</div>';
-  state = {items:[], movements:[], requisicoes:[]};
+  state = {items:[], movements:[], requisicoes:[], usuarios:[]};
   try{
     await fetchCategorias();
-    await Promise.all([fetchItems(), fetchMovimentacoes(), fetchRequisicoes()]);
+    const tarefas = [fetchItems(), fetchMovimentacoes(), fetchRequisicoes()];
+    if(isAdmin()) tarefas.push(fetchUsuarios());
+    await Promise.all(tarefas);
   }catch(e){
     console.error(e);
     document.getElementById('main').innerHTML = '<div class="empty">Não foi possível conectar ao servidor.</div>';
@@ -180,17 +195,58 @@ async function carregarDados(){
   render();
 }
 
-async function checkAuth(){
+/* ---------- POLLING (sincronização entre dispositivos) ----------
+   A cada POLL_INTERVAL_MS, busca os dados de novo no servidor para que
+   alterações feitas em outro dispositivo apareçam aqui sem precisar
+   recarregar a página manualmente. */
+const POLL_INTERVAL_MS = 8000;
+let pollTimer = null;
+let pollAvisouErro = false;
+
+function usuarioOcupado(){
+  const overlay = document.getElementById('overlay');
+  if(overlay && !overlay.classList.contains('hidden')) return true; // modal aberto (form de item, importação, etc.)
+  const ativo = document.activeElement;
+  if(ativo && ['INPUT','TEXTAREA','SELECT'].includes(ativo.tagName)) return true; // usuário digitando/selecionando algo
+  return false;
+}
+
+async function pollDados(){
+  if(!usuarioAtual || usuarioOcupado()) return;
   try{
-    usuarioAtual = await apiFetch('/auth/me');
-    return true;
-  }catch(err){
-    usuarioAtual = null;
-    return false;
+    await fetchCategorias();
+    await Promise.all([fetchItems(), fetchMovimentacoes(), fetchRequisicoes()]);
+    pollAvisouErro = false;
+    render();
+  }catch(e){
+    if(!pollAvisouErro){
+      console.warn('Falha ao atualizar dados automaticamente, tentando novamente em breve.', e);
+      pollAvisouErro = true;
+    }
   }
 }
 
+function iniciarPolling(){
+  pararPolling();
+  pollTimer = setInterval(pollDados, POLL_INTERVAL_MS);
+}
+function pararPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+}
+
+/* Pausa o polling quando a aba está em segundo plano (economiza requisições)
+   e força uma atualização assim que o usuário volta pra ela. */
+document.addEventListener('visibilitychange', ()=>{
+  if(document.hidden){
+    pararPolling();
+  } else if(usuarioAtual){
+    pollDados();
+    iniciarPolling();
+  }
+});
+
 async function logout(){
+  pararPolling();
   try{ await apiFetch('/auth/logout', {method:'POST'}); }catch(err){}
   window.location.href = 'login.html';
 }
@@ -202,5 +258,6 @@ async function init(){
     return;
   }
   await carregarDados();
+  iniciarPolling();
 }
 init();

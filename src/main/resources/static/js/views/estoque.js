@@ -68,7 +68,9 @@ function renderEstoque(){
 
 function openItemModal(id){
   const editing = id ? itemById(id) : null;
-  pendingImage = editing ? (editing.image || null) : null;
+  pendingImageFile = null;
+  pendingImageRemoved = false;
+  editingImageUrl = editing ? (editing.image || null) : null;
   document.getElementById('sheet').innerHTML = `
     <h2>${editing?'Editar item':'Novo item'}</h2>
     <div class="field"><label>Nome do item</label><input type="text" id="f-name" value="${editing?esc(editing.name):''}"></div>
@@ -126,9 +128,9 @@ function openImportModal(){
   pendingImportErrors = [];
   document.getElementById('sheet').innerHTML = `
     <h2>Importar itens via planilha</h2>
-    <div class="hint" style="margin-bottom:10px;">Aceita .xlsx, .xls ou .csv. Itens com nome já cadastrado são atualizados; os demais são criados. Colunas reconhecidas: Nome, Categoria, Marca, Unidade, Estoque mínimo, Estoque atual, Preço de custo.</div>
-    <button type="button" class="btn btn-sm" style="width:100%;margin-bottom:10px;" onclick="downloadTemplate()">Baixar modelo (.csv)</button>
-    <div class="field"><label>Selecionar arquivo</label><input type="file" accept=".xlsx,.xls,.csv" id="import-file-input" onchange="handleSpreadsheetSelect(event)"></div>
+    <div class="hint" style="margin-bottom:10px;">Aceita .xlsx ou .xls. Itens com nome já cadastrado são atualizados; os demais são criados. Colunas reconhecidas: Nome, Categoria, Marca, Unidade, Estoque mínimo, Estoque atual, Preço de custo.</div>
+    <button type="button" class="btn btn-sm" style="width:100%;margin-bottom:10px;" onclick="downloadTemplate()">Baixar modelo (.xlsx)</button>
+    <div class="field"><label>Selecionar arquivo</label><input type="file" accept=".xlsx,.xls" id="import-file-input" onchange="handleSpreadsheetSelect(event)"></div>
     <div id="import-preview"></div>
     <div class="sheet-actions">
       <button class="btn btn-primary" id="import-confirm-btn" onclick="confirmImport()" disabled>Confirmar importação</button>

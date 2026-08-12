@@ -1,8 +1,19 @@
-/* API de acesso e manipulação de itens do estoque (dados, imagem e importação) */
-let pendingImage = null;
+/* API de acesso e manipulação de itens do estoque (dados, imagem e importação)
+   A imagem do item aceita qualquer arquivo de imagem (png, jpeg, gif etc.) e é enviada
+   como arquivo binário (multipart) pro backend, em vez de virar uma URL de texto. */
+let pendingImageFile = null;      // novo arquivo de imagem escolhido, ainda não enviado
+let pendingImageRemoved = false;  // usuário pediu pra remover a imagem atual do item
+let editingImageUrl = null;       // URL da imagem já salva do item, quando editando
+
 function imagePreviewHTML(){
-  return pendingImage
-      ? `<img src="${pendingImage}" style="width:100%;max-width:160px;height:110px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border);margin-bottom:6px;display:block;">
+  let src = null;
+  if(pendingImageFile){
+    src = URL.createObjectURL(pendingImageFile);
+  } else if(!pendingImageRemoved && editingImageUrl){
+    src = editingImageUrl;
+  }
+  return src
+      ? `<img src="${src}" style="width:100%;max-width:160px;height:110px;object-fit:cover;border-radius:8px;border:0.5px solid var(--border);margin-bottom:6px;display:block;">
        <button type="button" class="btn btn-sm" onclick="removePendingImage()">Remover imagem</button>`
       : `<div style="width:100%;max-width:160px;height:80px;border:1px dashed var(--border);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--ink-3);font-size:12px;margin-bottom:6px;">Sem imagem</div>`;
 }
@@ -10,40 +21,44 @@ function refreshImagePreview(){
   const wrap = document.getElementById('f-image-preview-wrap');
   if(wrap) wrap.innerHTML = imagePreviewHTML();
 }
-function resizeImage(file, maxDim=480, quality=0.72){
-  return new Promise((resolve,reject)=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      const img = new Image();
-      img.onload = ()=>{
-        let w=img.width, h=img.height;
-        if(w>h){ if(w>maxDim){ h=Math.round(h*maxDim/w); w=maxDim; } }
-        else { if(h>maxDim){ w=Math.round(w*maxDim/h); h=maxDim; } }
-        const canvas = document.createElement('canvas');
-        canvas.width=w; canvas.height=h;
-        canvas.getContext('2d').drawImage(img,0,0,w,h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
-      };
-      img.onerror = reject;
-      img.src = e.target.result;
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-async function handleImageSelect(e){
+function handleImageSelect(e){
   const file = e.target.files[0];
   if(!file) return;
-  try{
-    pendingImage = await resizeImage(file);
-    refreshImagePreview();
-  }catch(err){ showToast('Não foi possível carregar a imagem'); }
+  if(!file.type || !file.type.startsWith('image/')){
+    showToast('Selecione um arquivo de imagem válido (png, jpeg, gif...)');
+    e.target.value = '';
+    return;
+  }
+  pendingImageFile = file;
+  pendingImageRemoved = false;
+  refreshImagePreview();
 }
 function removePendingImage(){
-  pendingImage = null;
+  pendingImageFile = null;
+  pendingImageRemoved = true;
   const input = document.getElementById('f-image-input');
   if(input) input.value = '';
   refreshImagePreview();
+}
+
+/* Envia (ou remove) o arquivo de imagem de um item já salvo. Feito à parte da gravação
+   dos dados do item porque o upload é multipart, diferente do restante da API (JSON). */
+async function apiEnviarImagem(itemId, file){
+  const formData = new FormData();
+  formData.append('arquivo', file);
+  const res = await fetch(API_BASE + '/itens/' + itemId + '/imagem', {method:'POST', body: formData});
+  if(!res.ok){
+    let msg = 'Erro ao enviar imagem (' + res.status + ')';
+    try{ const body = await res.json(); if(body.erro) msg = body.erro; }catch(e){}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+async function apiRemoverImagem(itemId){
+  const res = await fetch(API_BASE + '/itens/' + itemId + '/imagem', {method:'DELETE'});
+  if(!res.ok && res.status !== 204){
+    throw new Error('Erro ao remover imagem');
+  }
 }
 
 async function saveItem(id){
@@ -55,13 +70,21 @@ async function saveItem(id){
   const cur = Number(document.getElementById('f-current').value) || 0;
   const cost = Number(document.getElementById('f-cost').value) || 0;
   if(!name){ showToast('Informe o nome do item'); return; }
-  const payload = mapItemToApi({name, category, unit, minStock:min, currentStock:cur, brand, costPrice:cost, image:pendingImage});
+  const payload = mapItemToApi({name, category, unit, minStock:min, currentStock:cur, brand, costPrice:cost});
   try{
-    if(id){
-      await apiFetch(`/itens/${id}`, {method:'PUT', body:JSON.stringify(payload)});
-    } else {
-      await apiFetch('/itens', {method:'POST', body:JSON.stringify(payload)});
+    const salvo = id
+        ? await apiFetch(`/itens/${id}`, {method:'PUT', body:JSON.stringify(payload)})
+        : await apiFetch('/itens', {method:'POST', body:JSON.stringify(payload)});
+
+    if(pendingImageFile){
+      await apiEnviarImagem(salvo.id, pendingImageFile);
+    } else if(pendingImageRemoved){
+      await apiRemoverImagem(salvo.id);
     }
+    pendingImageFile = null;
+    pendingImageRemoved = false;
+    editingImageUrl = null;
+
     await fetchItems();
     closeModal();
     renderEstoque();
@@ -91,16 +114,11 @@ function downloadTemplate(){
     ['Papel A4 (resma)','Escritório','Marca Y','resma',10,18,24.50],
     ['Café torrado e moído 500g','Café','Marca Z','pct',10,22,15.90]
   ];
-  const csv = '\uFEFF'+rows.map(r=>r.map(v=>{
-    const s = String(v);
-    return /[",;\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
-  }).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'modelo-itens-almoxarifado.csv';
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:28},{wch:16},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Itens');
+  XLSX.writeFile(wb, 'modelo-itens-almoxarifado.xlsx');
 }
 function readFileAsArrayBuffer(file){
   return new Promise((resolve,reject)=>{
@@ -179,8 +197,7 @@ async function confirmImport(){
       minStock: r.minStock,
       currentStock: r.hasCurrentCol ? r.currentStock : (existing ? existing.currentStock : r.currentStock),
       brand: r.brand || (existing ? existing.brand : ''),
-      costPrice: r.costPrice || (existing ? existing.costPrice : 0),
-      image: existing ? existing.image : null
+      costPrice: r.costPrice || (existing ? existing.costPrice : 0)
     });
     try{
       if(existing){

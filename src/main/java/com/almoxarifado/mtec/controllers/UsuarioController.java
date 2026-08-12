@@ -32,6 +32,21 @@ public class UsuarioController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UsuarioResponse criar(@RequestBody UsuarioRequest request) {
+        if (request.nome() == null || request.nome().isBlank()) {
+            throw new IllegalArgumentException("Informe o nome do usuário");
+        }
+        if (request.email() == null || request.email().isBlank()) {
+            throw new IllegalArgumentException("Informe o e-mail do usuário");
+        }
+        if (request.senha() == null || request.senha().length() < 6) {
+            throw new IllegalArgumentException("A senha deve ter pelo menos 6 caracteres");
+        }
+        if (request.perfil() == null) {
+            throw new IllegalArgumentException("Selecione o perfil do usuário");
+        }
+        if (usuarioRepository.findByEmail(request.email()).isPresent()) {
+            throw new IllegalArgumentException("Já existe um usuário cadastrado com este e-mail");
+        }
         Usuario usuario = new Usuario();
         usuario.setNome(request.nome());
         usuario.setEmail(request.email());

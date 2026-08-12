@@ -3,6 +3,7 @@ package com.almoxarifado.mtec.controllers;
 import com.almoxarifado.mtec.entities.Categoria;
 import com.almoxarifado.mtec.services.CategoriaService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -29,17 +30,20 @@ public class CategoriaController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasRole('ADMIN')")
     public Categoria criar(@RequestBody Categoria categoria) {
         return categoriaService.criar(categoria);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public Categoria atualizar(@PathVariable Long id, @RequestBody Categoria categoria) {
         return categoriaService.atualizar(id, categoria);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('ADMIN')")
     public void deletar(@PathVariable Long id) {
         categoriaService.deletar(id);
     }

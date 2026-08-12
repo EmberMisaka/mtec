@@ -5,6 +5,7 @@ import com.almoxarifado.mtec.entities.Requisicao;
 import com.almoxarifado.mtec.enums.StatusRequisicao;
 import com.almoxarifado.mtec.services.RequisicaoService;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -41,11 +42,13 @@ public class RequisicaoController {
     }
 
     @PutMapping("/{id}/atender")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     public Requisicao atender(@PathVariable Long id) {
         return requisicaoService.atender(id);
     }
 
     @PutMapping("/{id}/cancelar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     public Requisicao cancelar(@PathVariable Long id) {
         return requisicaoService.cancelar(id);
     }

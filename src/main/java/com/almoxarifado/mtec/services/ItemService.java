@@ -37,14 +37,32 @@ public class ItemService {
         item.setEstoqueMinimo(dadosAtualizados.getEstoqueMinimo());
         item.setMarca(dadosAtualizados.getMarca());
         item.setPrecoCusto(dadosAtualizados.getPrecoCusto());
-        item.setImagemUrl(dadosAtualizados.getImagemUrl());
         return itemRepository.save(item);
         // note: estoqueAtual não entra aqui de propósito — ver observação abaixo
+        // note: a imagem também não entra aqui de propósito — é gerenciada à parte via salvarImagem/removerImagem
     }
 
     public void deletar(Long id) {
         Item item = buscarPorId(id);
         itemRepository.delete(item);
+    }
+
+    /**
+     * Salva o arquivo de imagem enviado pelo usuário (qualquer formato de imagem:
+     * png, jpeg, gif etc.), substituindo a imagem anterior do item, se houver.
+     */
+    public Item salvarImagem(Long id, byte[] dados, String contentType) {
+        Item item = buscarPorId(id);
+        item.setImagem(dados);
+        item.setImagemContentType(contentType);
+        return itemRepository.save(item);
+    }
+
+    public void removerImagem(Long id) {
+        Item item = buscarPorId(id);
+        item.setImagem(null);
+        item.setImagemContentType(null);
+        itemRepository.save(item);
     }
 
     /**

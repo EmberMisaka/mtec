@@ -1,5 +1,6 @@
 package com.almoxarifado.mtec.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -31,8 +32,16 @@ public class Item {
     @Column(name = "preco_custo")
     private BigDecimal precoCusto;
 
-    @Column(name = "imagem_url")
-    private String imagemUrl;
+    /* Conteúdo binário da imagem do item (aceita png, jpeg, gif e outros formatos de imagem).
+       Antes era armazenado como uma URL em texto (imagemUrl); agora o arquivo enviado
+       pelo usuário é guardado diretamente no banco, junto com seu content-type. */
+    @Lob
+    @Basic(fetch = FetchType.LAZY)
+    @Column(name = "imagem")
+    private byte[] imagem;
+
+    @Column(name = "imagem_content_type")
+    private String imagemContentType;
 
     public Item() {
     }
@@ -101,11 +110,26 @@ public class Item {
         this.precoCusto = precoCusto;
     }
 
-    public String getImagemUrl() {
-        return imagemUrl;
+    @JsonIgnore
+    public byte[] getImagem() {
+        return imagem;
     }
 
-    public void setImagemUrl(String imagemUrl) {
-        this.imagemUrl = imagemUrl;
+    public void setImagem(byte[] imagem) {
+        this.imagem = imagem;
+    }
+
+    @JsonIgnore
+    public String getImagemContentType() {
+        return imagemContentType;
+    }
+
+    public void setImagemContentType(String imagemContentType) {
+        this.imagemContentType = imagemContentType;
+    }
+
+    /** Exposto no JSON como "temImagem", pra view decidir se mostra a miniatura sem baixar o binário inteiro. */
+    public boolean isTemImagem() {
+        return imagem != null && imagem.length > 0;
     }
 }
