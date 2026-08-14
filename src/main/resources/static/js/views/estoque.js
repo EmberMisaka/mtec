@@ -129,7 +129,7 @@ function openImportModal(){
   document.getElementById('sheet').innerHTML = `
     <h2>Importar itens via planilha</h2>
     <div class="hint" style="margin-bottom:10px;">Aceita .xlsx ou .xls. Itens com nome já cadastrado são atualizados; os demais são criados. Colunas reconhecidas: Nome, Categoria, Marca, Unidade, Estoque mínimo, Estoque atual, Preço de custo.</div>
-    <button type="button" class="btn btn-sm" style="width:100%;margin-bottom:10px;" onclick="downloadTemplate()">Baixar modelo (.xlsx)</button>
+    <button type="button" class="btn btn-sm" style="width:100%;margin-bottom:10px;" onclick="exportarItens()">Exportar itens (.xlsx)</button>
     <div class="field"><label>Selecionar arquivo</label><input type="file" accept=".xlsx,.xls" id="import-file-input" onchange="handleSpreadsheetSelect(event)"></div>
     <div id="import-preview"></div>
     <div class="sheet-actions">

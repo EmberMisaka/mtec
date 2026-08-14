@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import jakarta.persistence.EntityNotFoundException;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 import java.util.List;
 
@@ -28,7 +30,16 @@ public class UsuarioController {
     public List<UsuarioResponse> listar() {
         return usuarioRepository.findAll().stream().map(UsuarioResponse::de).toList();
     }
-
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deletar(@PathVariable Long id, @AuthenticationPrincipal Usuario usuarioLogado) {
+        if (usuarioLogado.getId().equals(id)) {
+            throw new IllegalStateException("Você não pode excluir seu próprio usuário.");
+        }
+        Usuario usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Usuário não encontrado: " + id));
+        usuarioRepository.delete(usuario);
+    }
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public UsuarioResponse criar(@RequestBody UsuarioRequest request) {

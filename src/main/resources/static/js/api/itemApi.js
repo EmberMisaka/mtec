@@ -101,24 +101,18 @@ function findCol(headers, candidates){
   return -1;
 }
 function matchCategory(v){
-  const n = removeAccents(v).toLowerCase();
-  if(n.includes('limp')) return 'Limpeza';
-  if(n.includes('escrit')) return 'Escritório';
-  if(n.includes('caf')) return 'Café';
-  return 'Limpeza';
+  const n = removeAccents(v).toLowerCase().trim();
+  return CATEGORIES.find(c => removeAccents(c).toLowerCase().trim() === n) || null;
 }
-function downloadTemplate(){
-  const rows = [
-    ['Nome','Categoria','Marca','Unidade','Estoque minimo','Estoque atual','Preco de custo'],
-    ['Álcool em gel 500ml','Limpeza','Marca X','un',10,24,8.90],
-    ['Papel A4 (resma)','Escritório','Marca Y','resma',10,18,24.50],
-    ['Café torrado e moído 500g','Café','Marca Z','pct',10,22,15.90]
-  ];
-  const wb = XLSX.utils.book_new();
+function exportarItens(){
+  const rows = [['Nome','Categoria','Marca','Unidade','Estoque minimo','Estoque atual','Preco de custo']];
+  state.items.forEach(i=>{
+    rows.push([i.name, i.category, i.brand||'', i.unit, i.minStock, i.currentStock, i.costPrice]);
+  });
   const ws = XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols'] = [{wch:28},{wch:16},{wch:14},{wch:10},{wch:14},{wch:14},{wch:14}];
+  const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Itens');
-  XLSX.writeFile(wb, 'modelo-itens-almoxarifado.xlsx');
+  XLSX.writeFile(wb, 'itens-almoxarifado.xlsx');
 }
 function readFileAsArrayBuffer(file){
   return new Promise((resolve,reject)=>{
@@ -149,15 +143,30 @@ function parseImportRows(rows){
   const parsed = [], errors = [];
   for(let r=1;r<rows.length;r++){
     const row = rows[r];
+
     if(!row || row.every(c=>c===''||c==null)) continue;
+
     const name = String(row[colName]||'').trim();
+
     if(!name){ errors.push('Linha '+(r+1)+': sem nome, ignorada.'); continue; }
-    const category = colCategory>-1 ? matchCategory(row[colCategory]) : 'Limpeza';
+
+    let category;
+    if(colCategory>-1){
+      category = matchCategory(row[colCategory]);
+      if(!category){
+        errors.push('Linha '+(r+1)+': categoria "'+row[colCategory]+'" não existe, item ignorado.');
+        continue;
+      }
+    } else {
+      category = CATEGORIES[0];
+    }
+
     const brand = colBrand>-1 ? String(row[colBrand]||'').trim() : '';
     const unit = colUnit>-1 ? String(row[colUnit]||'').trim() : 'un';
     const minStock = colMin>-1 ? Number(row[colMin])||0 : 0;
     const currentStock = colCurrent>-1 ? Number(row[colCurrent])||0 : 0;
     const costPrice = colCost>-1 ? Number(row[colCost])||0 : 0;
+
     parsed.push({name, category, brand, unit:unit||'un', minStock, currentStock, costPrice, hasCurrentCol: colCurrent>-1});
   }
   pendingImportRows = parsed;
