@@ -204,3 +204,13 @@ nav.bottom button.active{background:var(--teal-bg);}
 }
   #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}
   #app.hidden,#login-screen.hidden{display:none;}
+  #user-badge{position:absolute;top:14px;right:18px;display:flex;align-items:center;gap:8px;max-width:55%;}
+  #user-badge .user-badge-nome{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #user-badge .user-badge-perfil{display:none;}
+  #user-badge .btn{padding:4px 10px;font-size:11.5px;}
+
+  @media (min-width: 1030px){
+    #user-badge{top:20px;right:32px;}
+    #user-badge .user-badge-perfil{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--ink-3);text-transform:uppercase;padding:2px 8px;border:0.5px solid var(--border);border-radius:20px;}
+  }
+  .st-aprovada{background:var(--indigo-bg);color:var(--indigo);}

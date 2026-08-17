@@ -27,6 +27,7 @@ function renderUsuarios(){
     list = `<div class="empty"><div class="big">👤</div>Nenhum usuário cadastrado</div>`;
   } else {
     usuarios.forEach(u=>{
+      const souEu = usuarioAtual && usuarioAtual.id === u.id;
       list += `<div class="card">
         <div class="item-row">
           <div style="min-width:0;">
@@ -35,7 +36,8 @@ function renderUsuarios(){
           </div>
           <span class="badge perfil-${esc(u.perfil)}">${perfilLabel(u.perfil)}</span>
         </div>
-      </div>`;
+        ${souEu ? '' : `<div style="margin-top:8px;"><button class="btn btn-sm" onclick="excluirUsuario(${u.id})">Excluir</button></div>`}
+       </div>`;
     });
   }
 

@@ -29,13 +29,26 @@ public class MovimentacaoService {
         return movimentacaoRepository.findByItemOrderByDataDesc(item);
     }
 
-    public Movimentacao registrarEntrada(Long itemId, int quantidade, String observacao) {
+    public Movimentacao registrarEntrada(Long itemId, int quantidade, String observacao, String linkPecom, String numeroPecom, String numeroNf) {
         if (quantidade <= 0) {
             throw new IllegalArgumentException("Quantidade de entrada deve ser maior que zero.");
         }
+        if (linkPecom == null || linkPecom.isBlank()) {
+            throw new IllegalArgumentException("Informe o link do PECOM.");
+        }
+        if (numeroPecom == null || numeroPecom.isBlank()) {
+            throw new IllegalArgumentException("Informe o número do PECOM.");
+        }
+        if (numeroNf == null || numeroNf.isBlank()) {
+            throw new IllegalArgumentException("Informe o número da NF.");
+        }
         Item item = itemService.buscarPorId(itemId);
         itemService.ajustarEstoque(item, quantidade);
-        return salvarMovimentacao(item, TipoMovimentacao.ENTRADA, quantidade, observacao);
+        Movimentacao movimentacao = salvarMovimentacao(item, TipoMovimentacao.ENTRADA, quantidade, observacao);
+        movimentacao.setLinkPecom(linkPecom);
+        movimentacao.setNumeroPecom(numeroPecom);
+        movimentacao.setNumeroNf(numeroNf);
+        return movimentacaoRepository.save(movimentacao);
     }
 
     public Movimentacao registrarSaida(Long itemId, int quantidade, String observacao) {

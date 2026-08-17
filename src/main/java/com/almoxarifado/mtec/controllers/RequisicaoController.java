@@ -2,10 +2,12 @@ package com.almoxarifado.mtec.controllers;
 
 import com.almoxarifado.mtec.dto.RequisicaoRequest;
 import com.almoxarifado.mtec.entities.Requisicao;
+import com.almoxarifado.mtec.entities.Usuario;
 import com.almoxarifado.mtec.enums.StatusRequisicao;
 import com.almoxarifado.mtec.services.RequisicaoService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -34,15 +36,20 @@ public class RequisicaoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Requisicao criar(@RequestBody RequisicaoRequest request) {
+    public Requisicao criar(@RequestBody RequisicaoRequest request, @AuthenticationPrincipal Usuario usuarioLogado) {
         return requisicaoService.criar(
-                request.itemId(), request.solicitante(), request.setor(),
+                request.itemId(), usuarioLogado.getNome(), request.setor(),
                 request.quantidade(), request.observacao()
         );
     }
 
-    @PutMapping("/{id}/atender")
+    @PutMapping("/{id}/aprovar")
     @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    public Requisicao aprovar(@PathVariable Long id) {
+        return requisicaoService.aprovar(id);
+    }
+
+    @PutMapping("/{id}/atender")
     public Requisicao atender(@PathVariable Long id) {
         return requisicaoService.atender(id);
     }

@@ -99,4 +99,6 @@ public class Requisicao {
     public void setStatus(StatusRequisicao status) {
         this.status = status;
     }
+
+    public String getCodigo() {return id != null ? String.format("REQ-%06d", id) : null;}
 }

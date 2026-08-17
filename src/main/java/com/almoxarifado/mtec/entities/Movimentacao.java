@@ -26,6 +26,15 @@ public class Movimentacao {
     @Column(nullable = false)
     private LocalDate data;
 
+    @Column(name = "link_pecom")
+    private String linkPecom;
+
+    @Column(name = "numero_pecom")
+    private String numeroPecom;
+
+    @Column(name = "numero_nf")
+    private String numeroNf;
+
     private String observacao;
 
     public Movimentacao() {
@@ -78,4 +87,16 @@ public class Movimentacao {
     public void setObservacao(String observacao) {
         this.observacao = observacao;
     }
+
+    public String getLinkPecom() {return linkPecom;}
+
+    public void setLinkPecom(String linkPecom) {this.linkPecom = linkPecom;}
+
+    public String getNumeroPecom() {return numeroPecom;}
+
+    public void setNumeroPecom(String numeroPecom) {this.numeroPecom = numeroPecom;}
+
+    public String getNumeroNf() {return numeroNf;}
+
+    public void setNumeroNf(String numeroNf) {this.numeroNf = numeroNf;}
 }

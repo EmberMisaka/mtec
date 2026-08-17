@@ -33,7 +33,9 @@ public class MovimentacaoController {
     @PostMapping("/entrada")
     @ResponseStatus(HttpStatus.CREATED)
     public Movimentacao registrarEntrada(@RequestBody EntradaRequest request) {
-        return movimentacaoService.registrarEntrada(request.itemId(), request.quantidade(), request.observacao());
+        return movimentacaoService.registrarEntrada(
+                request.itemId(), request.quantidade(), request.observacao(),
+                request.linkPecom(), request.numeroPecom(), request.numeroNf());
     }
 
     @PostMapping("/saida")

@@ -79,12 +79,16 @@ function mapMovimentacaoFromApi(m){
     itemId: m.item.id,
     qty: m.quantidade,
     date: m.data,
-    note: m.observacao
+    note: m.observacao,
+    linkPecom: m.linkPecom,
+    numeroPecom: m.numeroPecom,
+    numeroNf: m.numeroNf
   };
 }
 function mapRequisicaoFromApi(r){
   return {
     id: r.id,
+    codigo: r.codigo,
     requester: r.solicitante,
     sector: r.setor,
     itemId: r.item.id,
@@ -152,6 +156,15 @@ function renderNav(){
       <svg viewBox="0 0 24 24">${t.icon}</svg>
       <span>${t.label}</span>
     </button>`).join('');
+}
+function renderUserBadge(){
+  const el = document.getElementById('user-badge');
+  if(!el || !usuarioAtual) return;
+  el.innerHTML = `
+    <span class="user-badge-nome">${esc(usuarioAtual.nome)}</span>
+    <span class="user-badge-perfil">${perfilLabel(usuarioAtual.perfil)}</span>
+    <button class="btn btn-sm" onclick="logout()">Sair</button>
+  `;
 }
 function setTab(id){ currentTab = id; render(); }
 
@@ -257,6 +270,7 @@ async function init(){
     window.location.href = 'login.html';
     return;
   }
+  renderUserBadge();
   await carregarDados();
   iniciarPolling();
 }

@@ -11,6 +11,11 @@ function renderEntradas(){
         <div class="field"><label>Quantidade</label><input type="number" id="e-qty" min="1" value="1"></div>
         <div class="field"><label>Data</label><input type="date" id="e-date" value="${todayISO()}"></div>
       </div>
+      <div class="field"><label>Link do PECOM</label><input type="text" id="e-pecom-link" placeholder="https://..."></div>
+        <div class="row-2">
+          <div class="field"><label>Nº do PECOM</label><input type="text" id="e-pecom-num"></div>
+          <div class="field"><label>Nº da NF</label><input type="text" id="e-nf-num"></div>
+       </div>
       <div class="field"><label>Fornecedor / nota fiscal</label><input type="text" id="e-note" placeholder="Opcional"></div>
       <button class="btn btn-teal" onclick="registerEntrada()">Registrar entrada</button>
     </div>
@@ -53,6 +58,7 @@ function movementCard(m){
       <div>
         <div class="name">${esc(item.name)}</div>
         <div class="sub">${fmtDate(m.date)}${m.note?' · '+esc(m.note):''}</div>
+        ${m.type==='entrada' && m.numeroNf ? `<div class="sub">PECOM ${esc(m.numeroPecom||'—')} · NF ${esc(m.numeroNf)}</div>` : ''}
       </div>
       <div class="stock"><div class="q mono">${sign}${Math.abs(m.qty)}</div></div>
     </div>
@@ -65,14 +71,14 @@ function movementCard(m){
 function renderRequisicoes(){
   document.getElementById('view-title').textContent = 'Requisições';
   const list = [...state.requisicoes].sort((a,b)=>{
-    const order = {pendente:0, atendida:1, cancelada:2};
+    const order = {pendente:0, aprovada:1, atendida:2, cancelada:3};
     if(order[a.status]!==order[b.status]) return order[a.status]-order[b.status];
     return b.date.localeCompare(a.date);
   });
   document.getElementById('main').innerHTML = `
     <div class="card">
       <div class="row-2">
-        <div class="field"><label>Solicitante</label><input type="text" id="r-person" placeholder="Nome"></div>
+        <div class="field"><label>Solicitante</label><input type="text" value="${esc(usuarioAtual.nome)}" disabled></div>
         <div class="field"><label>Setor</label><input type="text" id="r-sector" placeholder="Opcional"></div>
       </div>
       <div class="field"><label>Item</label><select id="r-item">${itemOptions(null)}</select></div>
@@ -90,9 +96,11 @@ function renderRequisicoes(){
 }
 function requisicaoCard(r){
   const item = itemById(r.itemId);
+  const souGestor = usuarioAtual && (usuarioAtual.perfil==='ADMIN' || usuarioAtual.perfil==='GESTOR');
   return `<div class="card">
     <div class="item-row">
       <div>
+        <div class="sub mono">${esc(r.codigo)}</div>
         <div class="name">${item?esc(item.name):'(item removido)'}</div>
         <div class="sub">${esc(r.requester||'—')}${r.sector?' · '+esc(r.sector):''} · ${fmtDate(r.date)}</div>
         ${r.note?`<div class="sub">${esc(r.note)}</div>`:''}
@@ -101,10 +109,11 @@ function requisicaoCard(r){
     </div>
     <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
       <span class="badge st-${r.status}">${r.status}</span>
-      ${r.status==='pendente'?`<div style="display:flex;gap:6px;">
-        <button class="btn btn-sm btn-teal" onclick="atenderRequisicao('${r.id}')">Atender</button>
-        <button class="btn btn-sm" onclick="cancelarRequisicao('${r.id}')">Cancelar</button>
-      </div>`:''}
+      <div style="display:flex;gap:6px;">
+        ${r.status==='pendente' && souGestor?`<button class="btn btn-sm btn-teal" onclick="aprovarRequisicao('${r.id}')">Aprovar</button>`:''}
+        ${r.status==='aprovada'?`<button class="btn btn-sm btn-teal" onclick="atenderRequisicao('${r.id}')">Atender</button>`:''}
+        ${(r.status==='pendente'||r.status==='aprovada') && souGestor?`<button class="btn btn-sm" onclick="cancelarRequisicao('${r.id}')">Cancelar</button>`:''}
+      </div>
     </div>
   </div>`;
 }

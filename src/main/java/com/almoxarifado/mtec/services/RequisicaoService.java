@@ -54,11 +54,27 @@ public class RequisicaoService {
         return requisicaoRepository.save(requisicao);
     }
 
-    public Requisicao atender(Long requisicaoId) {
+    public Requisicao aprovar(Long requisicaoId) {
         Requisicao requisicao = buscarPorId(requisicaoId);
 
         if (requisicao.getStatus() != StatusRequisicao.PENDENTE) {
-            throw new IllegalStateException("Somente requisições pendentes podem ser atendidas.");
+            throw new IllegalStateException("Somente requisições pendentes podem ser aprovadas.");
+        }
+
+        Item item = requisicao.getItem();
+        if (requisicao.getQuantidade() > item.getEstoqueAtual()) {
+            throw new IllegalStateException("Estoque insuficiente para aprovar esta requisição.");
+        }
+
+        requisicao.setStatus(StatusRequisicao.APROVADA);
+        return requisicaoRepository.save(requisicao);
+    }
+
+    public Requisicao atender(Long requisicaoId) {
+        Requisicao requisicao = buscarPorId(requisicaoId);
+
+        if (requisicao.getStatus() != StatusRequisicao.APROVADA) {
+            throw new IllegalStateException("Somente requisições aprovadas podem ser atendidas.");
         }
 
         Item item = requisicao.getItem();
@@ -81,8 +97,8 @@ public class RequisicaoService {
     public Requisicao cancelar(Long requisicaoId) {
         Requisicao requisicao = buscarPorId(requisicaoId);
 
-        if (requisicao.getStatus() != StatusRequisicao.PENDENTE) {
-            throw new IllegalStateException("Somente requisições pendentes podem ser canceladas.");
+        if (requisicao.getStatus() != StatusRequisicao.PENDENTE && requisicao.getStatus() != StatusRequisicao.APROVADA) {
+            throw new IllegalStateException("Somente requisições pendentes ou aprovadas podem ser canceladas.");
         }
 
         requisicao.setStatus(StatusRequisicao.CANCELADA);

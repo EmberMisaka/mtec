@@ -3,3 +3,14 @@
 async function criarUsuario(payload){
   return apiFetch('/usuarios', {method:'POST', body:JSON.stringify(payload)});
 }
+async function excluirUsuario(id){
+  if(!confirm('Excluir este usuário?')) return;
+  try{
+    await apiFetch('/usuarios/'+id, {method:'DELETE'});
+    await fetchUsuarios();
+    renderUsuarios();
+    showToast('Usuário excluído');
+  }catch(err){
+    showToast(err.message || 'Erro ao excluir usuário');
+  }
+}

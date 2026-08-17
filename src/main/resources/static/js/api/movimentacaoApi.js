@@ -3,11 +3,17 @@ async function registerEntrada(){
   const itemId = document.getElementById('e-item').value;
   const qty = Number(document.getElementById('e-qty').value);
   const note = document.getElementById('e-note').value.trim();
+  const linkPecom = document.getElementById('e-pecom-link').value.trim();
+  const numeroPecom = document.getElementById('e-pecom-num').value.trim();
+  const numeroNf = document.getElementById('e-nf-num').value.trim();
   if(!itemId){ showToast('Cadastre um item primeiro'); return; }
   if(!qty || qty<=0){ showToast('Informe uma quantidade válida'); return; }
+  if(!linkPecom){ showToast('Informe o link do PECOM'); return; }
+  if(!numeroPecom){ showToast('Informe o número do PECOM'); return; }
+  if(!numeroNf){ showToast('Informe o número da NF'); return; }
   const item = itemById(itemId);
   try{
-    await apiFetch('/movimentacoes/entrada', {method:'POST', body:JSON.stringify({itemId:Number(itemId), quantidade:qty, observacao:note})});
+    await apiFetch('/movimentacoes/entrada', {method:'POST', body:JSON.stringify({itemId:Number(itemId), quantidade:qty, observacao:note, linkPecom, numeroPecom, numeroNf})});
     await Promise.all([fetchItems(), fetchMovimentacoes()]);
     renderEntradas();
     showToast('Entrada registrada: +'+qty+(item?' '+item.unit:''));
