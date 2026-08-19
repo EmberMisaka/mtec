@@ -17,6 +17,7 @@ let usuarioAtual = null;
 let pendingImportRows = [];
 let pendingImportErrors = [];
 let stockFilter = {search:'', category:'Todos'};
+let stockPage = 1;
 let inventoryResponsible = '';
 let inventoryCounts = {};
 

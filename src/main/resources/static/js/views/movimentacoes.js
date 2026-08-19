@@ -19,7 +19,10 @@ function renderEntradas(){
       <div class="field"><label>Fornecedor / nota fiscal</label><input type="text" id="e-note" placeholder="Opcional"></div>
       <button class="btn btn-teal" onclick="registerEntrada()">Registrar entrada</button>
     </div>
-    <div class="section-label">Últimas entradas</div>
+    <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Últimas entradas</span>
+      <button class="btn btn-sm" onclick="exportarMovimentacoes('entrada')">Exportar (.xlsx)</button>
+    </div>
     ${recentes.length===0?'<div class="empty">Nenhuma entrada registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
   `;
 }
@@ -42,7 +45,10 @@ function renderSaidas(){
       </div>
       <button class="btn btn-rust" onclick="registerSaida()">Registrar saída</button>
     </div>
-    <div class="section-label">Últimas saídas</div>
+     <div class="section-label" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Últimas saídas</span>
+        <button class="btn btn-sm" onclick="exportarMovimentacoes('saida')">Exportar (.xlsx)</button>
+    </div>
     ${recentes.length===0?'<div class="empty">Nenhuma saída registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
   `;
 }

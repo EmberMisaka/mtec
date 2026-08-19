@@ -44,3 +44,16 @@ async function registerSaida(){
     showToast(err.message || 'Erro ao registrar saída');
   }
 }
+
+function exportarMovimentacoes(tipo){
+  const label = tipo==='entrada' ? 'Entradas' : 'Saidas';
+  const rows = [['Data','Item','Quantidade','Observacao']];
+  state.movements.filter(m=>m.type===tipo).forEach(m=>{
+    const item = itemById(m.itemId);
+    rows.push([m.date, item?item.name:'(item removido)', m.qty, m.note||'']);
+  });
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, label);
+  XLSX.writeFile(wb, (tipo==='entrada'?'entradas':'saidas')+'-almoxarifado.xlsx');
+}

@@ -11,39 +11,57 @@ function renderEstoque(){
     return true;
   });
 
+  const ordered = [];
+  CATEGORIES.forEach(cat=>{
+    filtered.filter(i=>i.category===cat).forEach(i=>ordered.push(i));
+  });
+
+  const ITEMS_PER_PAGE = 10;
+  const totalPages = Math.max(1, Math.ceil(ordered.length / ITEMS_PER_PAGE));
+  if(stockPage > totalPages) stockPage = totalPages;
+  if(stockPage < 1) stockPage = 1;
+  const pageItems = ordered.slice((stockPage-1)*ITEMS_PER_PAGE, stockPage*ITEMS_PER_PAGE);
+
   let list = '';
-  if(filtered.length===0){
+  if(pageItems.length===0){
     list = `<div class="empty"><div class="big">📦</div>Nenhum item encontrado</div>`;
   } else {
-    CATEGORIES.forEach(cat=>{
-      const items = filtered.filter(i=>i.category===cat);
-      if(items.length===0) return;
-      list += `<div class="section-label">${cat}</div>`;
-      items.forEach(i=>{
-        const low = i.currentStock < i.minStock;
-        const thumb = i.image
-            ? `<img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border);flex:none;">`
-            : `<div style="width:40px;height:40px;border-radius:6px;background:var(--gray-bg);flex:none;"></div>`;
-        list += `<div class="card">
-          <div class="item-row">
-            <div style="display:flex;gap:10px;align-items:center;min-width:0;">
-              ${thumb}
-              <div style="min-width:0;">
-                <div class="name">${esc(i.name)}</div>
-                <div class="sub">${i.brand?esc(i.brand)+' · ':''}${esc(i.unit)} · <span class="badge cat-${i.category}">${i.category}</span></div>
-                ${i.costPrice?`<div class="sub">R$ ${Number(i.costPrice).toFixed(2).replace('.',',')} / ${esc(i.unit)}</div>`:''}
-              </div>
+    let currentCat = null;
+    pageItems.forEach(i=>{
+      if(i.category !== currentCat){
+        currentCat = i.category;
+        list += `<div class="section-label">${currentCat}</div>`;
+      }
+      const low = i.currentStock < i.minStock;
+      const thumb = i.image
+          ? `<img src="${i.image}" style="width:40px;height:40px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border);flex:none;">`
+          : `<div style="width:40px;height:40px;border-radius:6px;background:var(--gray-bg);flex:none;"></div>`;
+      list += `<div class="card">
+        <div class="item-row">
+          <div style="display:flex;gap:10px;align-items:center;min-width:0;">
+            ${thumb}
+            <div style="min-width:0;">
+              <div class="name">${esc(i.name)}</div>
+              <div class="sub">${i.brand?esc(i.brand)+' · ':''}${esc(i.unit)} · <span class="badge cat-${i.category}">${i.category}</span></div>
+              ${i.costPrice?`<div class="sub">R$ ${Number(i.costPrice).toFixed(2).replace('.',',')} / ${esc(i.unit)}</div>`:''}
             </div>
-            <div class="stock">
-              <div class="q ${low?'low':''}">${i.currentStock}</div>
-              <div class="min">mín. ${i.minStock}</div>
-            </div>
-            <button class="btn-ghost" onclick="openItemModal('${i.id}')" aria-label="Editar item">✎</button>
           </div>
-        </div>`;
-      });
+          <div class="stock">
+            <div class="q ${low?'low':''}">${i.currentStock}</div>
+            <div class="min">mín. ${i.minStock}</div>
+          </div>
+          <button class="btn-ghost" onclick="openItemModal('${i.id}')" aria-label="Editar item">✎</button>
+        </div>
+      </div>`;
     });
   }
+
+  const pager = totalPages>1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
+      <button class="btn btn-sm" ${stockPage<=1?'disabled':''} onclick="stockPage--; renderEstoque();">‹ Anterior</button>
+      <span class="hint">Página ${stockPage} de ${totalPages}</span>
+      <button class="btn btn-sm" ${stockPage>=totalPages?'disabled':''} onclick="stockPage++; renderEstoque();">Próxima ›</button>
+    </div>` : '';
 
   document.getElementById('main').innerHTML = `
     <div class="metrics">
@@ -52,12 +70,13 @@ function renderEstoque(){
       <div class="metric ${pendentes>0?'alert':''}"><div class="n">${pendentes}</div><div class="l">requisições pendentes</div></div>
     </div>
     <div class="searchrow">
-      <input type="text" placeholder="Buscar item..." value="${esc(stockFilter.search)}" oninput="stockFilter.search=this.value; renderEstoque();">
+      <input type="text" placeholder="Buscar item..." value="${esc(stockFilter.search)}" oninput="stockFilter.search=this.value; stockPage=1; renderEstoque();">
     </div>
     <div class="chips">
-      ${['Todos',...CATEGORIES].map(c=>`<div class="chip ${stockFilter.category===c?'active':''}" onclick="stockFilter.category='${c}'; renderEstoque();">${c}</div>`).join('')}
+      ${['Todos',...CATEGORIES].map(c=>`<div class="chip ${stockFilter.category===c?'active':''}" onclick="stockFilter.category='${c}'; stockPage=1; renderEstoque();">${c}</div>`).join('')}
     </div>
     ${list}
+    ${pager}
   `;
   document.getElementById('fab').innerHTML = `<div style="display:flex;gap:8px;">
     <button class="btn" style="flex:1;" onclick="openImportModal()">Importar planilha</button>
