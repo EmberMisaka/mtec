@@ -26,20 +26,27 @@ public class ItemService {
     }
 
     public Item criar(Item item) {
+        validarFornecedor(item);
         return itemRepository.save(item);
     }
 
     public Item atualizar(Long id, Item dadosAtualizados) {
+        validarFornecedor(dadosAtualizados);
         Item item = buscarPorId(id);
         item.setNome(dadosAtualizados.getNome());
         item.setCategoria(dadosAtualizados.getCategoria());
+        item.setFornecedor(dadosAtualizados.getFornecedor());
         item.setUnidade(dadosAtualizados.getUnidade());
         item.setEstoqueMinimo(dadosAtualizados.getEstoqueMinimo());
         item.setMarca(dadosAtualizados.getMarca());
         item.setPrecoCusto(dadosAtualizados.getPrecoCusto());
         return itemRepository.save(item);
-        // note: estoqueAtual não entra aqui de propósito — ver observação abaixo
-        // note: a imagem também não entra aqui de propósito — é gerenciada à parte via salvarImagem/removerImagem
+    }
+
+    private void validarFornecedor(Item item) {
+        if (item.getFornecedor() == null || item.getFornecedor().getId() == null) {
+            throw new IllegalArgumentException("Informe o fornecedor do item.");
+        }
     }
 
     public void deletar(Long id) {

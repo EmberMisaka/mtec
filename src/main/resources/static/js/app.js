@@ -1,6 +1,7 @@
 /* Estado global, constantes e utilidades da aplicação */
 let CATEGORIES = [];
 let categoriaIdPorNome = {};
+let fornecedorIdPorNome = {};
 const TABS = [
   {id:'estoque', label:'Estoque', icon:'<path d="M21 8L12 3 3 8v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5"/><path d="M12 13v8"/>'},
   {id:'entradas', label:'Entradas', icon:'<path d="M12 3v10"/><path d="M8 9l4 4 4-4"/><path d="M4 15v4a2 2 0 002 2h12a2 2 0 002-2v-4"/>'},
@@ -10,6 +11,7 @@ const TABS = [
 ];
 /* Aba de usuários: só aparece para administradores (cadastro de usuário é restrito ao ADMIN) */
 const TAB_USUARIOS = {id:'usuarios', label:'Usuários', icon:'<path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>'};
+const TAB_FORNECEDORES = {id:'fornecedores', label:'Fornecedores', icon:'<path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 9h1M9 13h1M14 9h1M14 13h1"/>'};
 
 let state = null;
 let currentTab = 'estoque';
@@ -52,6 +54,7 @@ function mapItemFromApi(it){
     id: it.id,
     name: it.nome,
     category: it.categoria ? it.categoria.nome : '',
+    fornecedor: it.fornecedor ? it.fornecedor.nomeFantasia : '',
     unit: it.unidade,
     minStock: it.estoqueMinimo,
     currentStock: it.estoqueAtual,
@@ -66,6 +69,7 @@ function mapItemToApi(item){
   return {
     nome: item.name,
     categoria: {id: categoriaIdPorNome[item.category]},
+    fornecedor: {id: fornecedorIdPorNome[item.fornecedor]},
     unidade: item.unit,
     estoqueMinimo: item.minStock,
     estoqueAtual: item.currentStock,
@@ -107,6 +111,12 @@ async function fetchCategorias(){
   categoriaIdPorNome = {};
   categorias.forEach(c=>{ categoriaIdPorNome[c.nome] = c.id; });
 }
+async function fetchFornecedores(){
+  const fornecedores = await apiFetch('/fornecedores');
+  state.fornecedores = fornecedores;
+  fornecedorIdPorNome = {};
+  fornecedores.forEach(f=>{ fornecedorIdPorNome[f.nomeFantasia] = f.id; });
+}
 async function fetchItems(){
   const itens = await apiFetch('/itens');
   state.items = itens.map(mapItemFromApi);
@@ -147,7 +157,7 @@ function itemOptions(selectedId){
 function isAdmin(){ return !!usuarioAtual && usuarioAtual.perfil === 'ADMIN'; }
 
 function visibleTabs(){
-  return isAdmin() ? [...TABS, TAB_USUARIOS] : TABS;
+  return isAdmin() ? [...TABS, TAB_FORNECEDORES, TAB_USUARIOS] : TABS;
 }
 
 function renderNav(){
@@ -179,6 +189,7 @@ function render(){
   else if(currentTab==='saidas') renderSaidas();
   else if(currentTab==='requisicoes') renderRequisicoes();
   else if(currentTab==='inventario') renderInventario();
+  else if(currentTab==='fornecedores') renderFornecedores();
   else if(currentTab==='usuarios') renderUsuarios();
 }
 
@@ -194,9 +205,9 @@ async function checkAuth(){
 
 async function carregarDados(){
   document.getElementById('main').innerHTML = '<div class="empty">Carregando...</div>';
-  state = {items:[], movements:[], requisicoes:[], usuarios:[]};
+  state = {items:[], movements:[], requisicoes:[], usuarios:[], fornecedores:[]};
   try{
-    await fetchCategorias();
+    await Promise.all([fetchCategorias(), fetchFornecedores()]);
     const tarefas = [fetchItems(), fetchMovimentacoes(), fetchRequisicoes()];
     if(isAdmin()) tarefas.push(fetchUsuarios());
     await Promise.all(tarefas);

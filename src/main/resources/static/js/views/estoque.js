@@ -99,6 +99,9 @@ function openItemModal(id){
       </div>
       <div class="field"><label>Marca</label><input type="text" id="f-brand" placeholder="Opcional" value="${editing?esc(editing.brand||''):''}"></div>
     </div>
+    <div class="field"><label>Fornecedor</label>
+        <select id="f-fornecedor">${(state.fornecedores||[]).map(f=>`<option ${editing&&editing.fornecedor===f.nomeFantasia?'selected':''}>${esc(f.nomeFantasia)}</option>`).join('')}</select>
+    </div>
     <div class="row-2">
       <div class="field"><label>Unidade</label><input type="text" id="f-unit" placeholder="un, cx, kg..." value="${editing?esc(editing.unit):''}"></div>
       <div class="field"><label>Estoque mínimo</label><input type="number" id="f-min" min="0" value="${editing?editing.minStock:0}"></div>

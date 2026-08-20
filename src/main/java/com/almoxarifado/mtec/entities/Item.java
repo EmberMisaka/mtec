@@ -32,6 +32,10 @@ public class Item {
     @Column(name = "preco_custo")
     private BigDecimal precoCusto;
 
+    @ManyToOne
+    @JoinColumn(name = "fornecedor_id")
+    private Fornecedor fornecedor;
+
     /* Conteúdo binário da imagem do item (aceita png, jpeg, gif e outros formatos de imagem).
        Antes era armazenado como uma URL em texto (imagemUrl); agora o arquivo enviado
        pelo usuário é guardado diretamente no banco, junto com seu content-type. */
@@ -132,4 +136,8 @@ public class Item {
     public boolean isTemImagem() {
         return imagem != null && imagem.length > 0;
     }
+
+    public Fornecedor getFornecedor() {return fornecedor;}
+
+    public void setFornecedor(Fornecedor fornecedor) {this.fornecedor = fornecedor;}
 }

@@ -69,8 +69,9 @@ async function saveItem(id){
   const min = Number(document.getElementById('f-min').value) || 0;
   const cur = Number(document.getElementById('f-current').value) || 0;
   const cost = Number(document.getElementById('f-cost').value) || 0;
+  const fornecedor = document.getElementById('f-fornecedor').value;
   if(!name){ showToast('Informe o nome do item'); return; }
-  const payload = mapItemToApi({name, category, unit, minStock:min, currentStock:cur, brand, costPrice:cost});
+  const payload = mapItemToApi({name, category, unit, minStock:min, currentStock:cur, brand, costPrice:cost, fornecedor});
   try{
     const salvo = id
         ? await apiFetch(`/itens/${id}`, {method:'PUT', body:JSON.stringify(payload)})
