@@ -36,6 +36,7 @@ public class RequisicaoController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
     public Requisicao criar(@RequestBody RequisicaoRequest request, @AuthenticationPrincipal Usuario usuarioLogado) {
         return requisicaoService.criar(
                 request.itemId(), usuarioLogado.getNome(), request.setor(),
@@ -44,12 +45,13 @@ public class RequisicaoController {
     }
 
     @PutMapping("/{id}/aprovar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'GESTOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'APROVADOR')")
     public Requisicao aprovar(@PathVariable Long id) {
         return requisicaoService.aprovar(id);
     }
 
     @PutMapping("/{id}/atender")
+    @PreAuthorize("hasAnyRole('ADMIN', 'FUNCIONARIO')")
     public Requisicao atender(@PathVariable Long id) {
         return requisicaoService.atender(id);
     }

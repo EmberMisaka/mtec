@@ -50,6 +50,7 @@ async function apiEnviarImagem(itemId, file){
   if(!res.ok){
     let msg = 'Erro ao enviar imagem (' + res.status + ')';
     try{ const body = await res.json(); if(body.erro) msg = body.erro; }catch(e){}
+    if(res.status === 403) msg = 'Você não possui permissão suficiente';
     throw new Error(msg);
   }
   return res.json();
@@ -57,7 +58,7 @@ async function apiEnviarImagem(itemId, file){
 async function apiRemoverImagem(itemId){
   const res = await fetch(API_BASE + '/itens/' + itemId + '/imagem', {method:'DELETE'});
   if(!res.ok && res.status !== 204){
-    throw new Error('Erro ao remover imagem');
+    throw new Error(res.status === 403 ? 'Você não possui permissão suficiente' : 'Erro ao remover imagem');
   }
 }
 

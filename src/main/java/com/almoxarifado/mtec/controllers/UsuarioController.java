@@ -52,6 +52,9 @@ public class UsuarioController {
         if (request.senha() == null || request.senha().length() < 6) {
             throw new IllegalArgumentException("A senha deve ter pelo menos 6 caracteres");
         }
+        if (!request.senha().equals(request.confirmacaoSenha())) {
+            throw new IllegalArgumentException("as senhas não combinam, tente novamente");
+        }
         if (request.perfil() == null) {
             throw new IllegalArgumentException("Selecione o perfil do usuário");
         }

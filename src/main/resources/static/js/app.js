@@ -43,6 +43,7 @@ async function apiFetch(path, options={}){
   if(!res.ok){
     let msg = 'Erro na requisição ('+res.status+')';
     try{ const body = await res.json(); if(body.erro) msg = body.erro; }catch(e){}
+    if(res.status === 403) msg = 'Você não possui permissão suficiente';
     throw new Error(msg);
   }
   if(res.status === 204) return null;
@@ -159,6 +160,9 @@ function itemOptions(selectedId){
 
 /* ---------- NAV ---------- */
 function isAdmin(){ return !!usuarioAtual && usuarioAtual.perfil === 'ADMIN'; }
+function isGestor(){ return !!usuarioAtual && (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'GESTOR'); }
+function isAprovador(){ return !!usuarioAtual && (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'APROVADOR'); }
+function isFuncionario(){ return !!usuarioAtual && (usuarioAtual.perfil === 'ADMIN' || usuarioAtual.perfil === 'FUNCIONARIO'); }
 
 function visibleTabs(){
   return isAdmin() ? [...TABS, TAB_FORNECEDORES, TAB_USUARIOS] : TABS;

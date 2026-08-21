@@ -99,7 +99,8 @@ function renderRequisicoes(){
     if(order[a.status]!==order[b.status]) return order[a.status]-order[b.status];
     return b.date.localeCompare(a.date);
   });
-  document.getElementById('main').innerHTML = `
+  const podeCriar = isGestor();
+  const formularioHTML = podeCriar ? `
     <div class="card">
       <div class="row-2">
         <div class="field"><label>Solicitante</label><input type="text" value="${esc(usuarioAtual.nome)}" disabled></div>
@@ -115,6 +116,9 @@ function renderRequisicoes(){
       <div class="field"><label>Observação</label><input type="text" id="r-note" placeholder="Opcional"></div>
       <button class="btn btn-primary" onclick="registerRequisicao()" ${requisicaoItens.length===0?'disabled':''}>Criar requisição${requisicaoItens.length?' ('+requisicaoItens.length+' '+(requisicaoItens.length===1?'item':'itens')+')':''}</button>
     </div>
+  ` : '';
+  document.getElementById('main').innerHTML = `
+    ${formularioHTML}
     <div class="section-label">Todas as requisições</div>
     ${list.length===0?'<div class="empty">Nenhuma requisição criada ainda</div>':list.map(r=>requisicaoCard(r)).join('')}
   `;
@@ -122,7 +126,9 @@ function renderRequisicoes(){
 }
 function requisicaoCard(r){
   const item = itemById(r.itemId);
-  const souGestor = usuarioAtual && (usuarioAtual.perfil==='ADMIN' || usuarioAtual.perfil==='GESTOR');
+  const souGestor = isGestor();
+  const souAprovador = isAprovador();
+  const souFuncionario = isFuncionario();
   return `<div class="card">
     <div class="item-row">
       <div>
@@ -136,8 +142,8 @@ function requisicaoCard(r){
     <div style="margin-top:8px;display:flex;align-items:center;justify-content:space-between;gap:8px;">
       <span class="badge st-${r.status}">${r.status}</span>
       <div style="display:flex;gap:6px;">
-        ${r.status==='pendente' && souGestor?`<button class="btn btn-sm btn-teal" onclick="aprovarRequisicao('${r.id}')">Aprovar</button>`:''}
-        ${r.status==='aprovada'?`<button class="btn btn-sm btn-teal" onclick="atenderRequisicao('${r.id}')">Atender</button>`:''}
+        ${r.status==='pendente' && souAprovador?`<button class="btn btn-sm btn-teal" onclick="aprovarRequisicao('${r.id}')">Aprovar</button>`:''}
+        ${r.status==='aprovada' && souFuncionario?`<button class="btn btn-sm btn-teal" onclick="atenderRequisicao('${r.id}')">Atender</button>`:''}
         ${(r.status==='pendente'||r.status==='aprovada') && souGestor?`<button class="btn btn-sm" onclick="cancelarRequisicao('${r.id}')">Cancelar</button>`:''}
       </div>
     </div>

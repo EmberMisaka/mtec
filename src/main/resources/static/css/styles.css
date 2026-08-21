@@ -67,10 +67,12 @@
   .cat-Escritório{background:var(--indigo-bg);color:var(--indigo);}
   .cat-Café{background:var(--amber-bg);color:var(--amber);}
   .st-pendente{background:var(--amber-bg);color:var(--amber);}
+  .st-aprovada{background:var(--indigo-bg);color:var(--indigo);}
   .st-atendida{background:var(--teal-bg);color:var(--teal);}
   .st-cancelada{background:var(--gray-bg);color:var(--ink-2);}
   .perfil-ADMIN{background:var(--indigo-bg);color:var(--indigo);}
   .perfil-GESTOR{background:var(--amber-bg);color:var(--amber);}
+  .perfil-APROVADOR{background:var(--rust-bg);color:var(--rust);}
   .perfil-FUNCIONARIO{background:var(--teal-bg);color:var(--teal);}
 
   .stamp{display:inline-flex;align-items:center;font-family:'IBM Plex Mono';font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;

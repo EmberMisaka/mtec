@@ -4,6 +4,7 @@
 const PERFIS = [
   {id:'ADMIN', label:'Administrador'},
   {id:'GESTOR', label:'Gestor'},
+  {id:'APROVADOR', label:'Aprovador'},
   {id:'FUNCIONARIO', label:'Funcionário'}
 ];
 
@@ -56,6 +57,7 @@ function openUsuarioModal(){
     <div class="field"><label>Nome</label><input type="text" id="u-nome"></div>
     <div class="field"><label>E-mail</label><input type="email" id="u-email" placeholder="usuario@empresa.com"></div>
     <div class="field"><label>Senha</label><input type="password" id="u-senha" placeholder="Mínimo 6 caracteres"></div>
+    <div class="field"><label>Confirmar senha</label><input type="password" id="u-senha-confirmacao" placeholder="Repita a senha"></div>
     <div class="field"><label>Perfil</label>
       <select id="u-perfil">${PERFIS.map(p=>`<option value="${p.id}">${p.label}</option>`).join('')}</select>
     </div>
@@ -72,12 +74,13 @@ async function salvarUsuario(){
   const nome = document.getElementById('u-nome').value.trim();
   const email = document.getElementById('u-email').value.trim();
   const senha = document.getElementById('u-senha').value;
+  const confirmacaoSenha = document.getElementById('u-senha-confirmacao').value;
   const perfil = document.getElementById('u-perfil').value;
   const errEl = document.getElementById('u-error');
   errEl.style.display = 'none';
 
-  if(!nome || !email || !senha){
-    errEl.textContent = 'Preencha nome, e-mail e senha';
+  if(!nome || !email || !senha || !confirmacaoSenha){
+    errEl.textContent = 'Preencha nome, e-mail e senha (nos dois campos)';
     errEl.style.display = 'block';
     return;
   }
@@ -86,9 +89,14 @@ async function salvarUsuario(){
     errEl.style.display = 'block';
     return;
   }
+  if(senha !== confirmacaoSenha){
+    errEl.textContent = 'as senhas não combinam, tente novamente';
+    errEl.style.display = 'block';
+    return;
+  }
 
   try{
-    await criarUsuario({nome, email, senha, perfil});
+    await criarUsuario({nome, email, senha, confirmacaoSenha, perfil});
     await fetchUsuarios();
     closeModal();
     renderUsuarios();
