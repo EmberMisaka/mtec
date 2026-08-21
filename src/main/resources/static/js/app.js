@@ -20,6 +20,10 @@ let pendingImportRows = [];
 let pendingImportErrors = [];
 let stockFilter = {search:'', category:'Todos'};
 let stockPage = 1;
+let entradaItens = [];
+let saidaItens = [];
+let requisicaoItens = [];
+let inventarioPage = 1;
 let inventoryResponsible = '';
 let inventoryCounts = {};
 
@@ -177,7 +181,13 @@ function renderUserBadge(){
     <button class="btn btn-sm" onclick="logout()">Sair</button>
   `;
 }
-function setTab(id){ currentTab = id; render(); }
+function setTab(id){
+  if(id==='entradas') entradaItens = [];
+  if(id==='saidas') saidaItens = [];
+  if(id==='requisicoes') requisicaoItens = [];
+  currentTab = id;
+  render();
+}
 
 function closeModal(){ document.getElementById('overlay').classList.add('hidden'); }
 
