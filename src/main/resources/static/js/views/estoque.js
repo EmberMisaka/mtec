@@ -16,11 +16,8 @@ function renderEstoque(){
     filtered.filter(i=>i.category===cat).forEach(i=>ordered.push(i));
   });
 
-  const ITEMS_PER_PAGE = 10;
-  const totalPages = Math.max(1, Math.ceil(ordered.length / ITEMS_PER_PAGE));
-  if(stockPage > totalPages) stockPage = totalPages;
-  if(stockPage < 1) stockPage = 1;
-  const pageItems = ordered.slice((stockPage-1)*ITEMS_PER_PAGE, stockPage*ITEMS_PER_PAGE);
+  const {pageItems, totalPages, page: stockPageAtual} = paginar(ordered, stockPage);
+  stockPage = stockPageAtual;
 
   let list = '';
   if(pageItems.length===0){
@@ -56,12 +53,7 @@ function renderEstoque(){
     });
   }
 
-  const pager = totalPages>1 ? `
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
-      <button class="btn btn-sm" ${stockPage<=1?'disabled':''} onclick="stockPage--; renderEstoque();">‹ Anterior</button>
-      <span class="hint">Página ${stockPage} de ${totalPages}</span>
-      <button class="btn btn-sm" ${stockPage>=totalPages?'disabled':''} onclick="stockPage++; renderEstoque();">Próxima ›</button>
-    </div>` : '';
+  const pager = totalPages>1 ? pagerHTML(stockPage, totalPages, 'stockPage--; renderEstoque();', 'stockPage++; renderEstoque();') : '';
 
   document.getElementById('main').innerHTML = `
     <div class="metrics">

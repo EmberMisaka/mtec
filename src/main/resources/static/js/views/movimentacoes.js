@@ -17,7 +17,9 @@ function itensLotePreviewHTML(lista, removerFn){
 function renderEntradas(){
   document.getElementById('view-title').textContent = 'Entradas';
   document.getElementById('fab').innerHTML = '';
-  const recentes = state.movements.filter(m=>m.type==='entrada').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).slice(0,25);
+  const todasEntradas = state.movements.filter(m=>m.type==='entrada').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id));
+  const {pageItems: recentes, totalPages, page: entradaPageAtual} = paginar(todasEntradas, entradaPage);
+  entradaPage = entradaPageAtual;
   document.getElementById('main').innerHTML = `
     <div class="card">
       <div class="row-2">
@@ -40,6 +42,7 @@ function renderEntradas(){
       <button class="btn btn-sm" onclick="exportarMovimentacoes('entrada')">Exportar (.xlsx)</button>
     </div>
     ${recentes.length===0?'<div class="empty">Nenhuma entrada registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
+    ${pagerHTML(entradaPage, totalPages, 'entradaPage--; renderEntradas();', 'entradaPage++; renderEntradas();')}
   `;
 }
 
@@ -47,7 +50,9 @@ function renderEntradas(){
 function renderSaidas(){
   document.getElementById('view-title').textContent = 'Saídas';
   document.getElementById('fab').innerHTML = '';
-  const recentes = state.movements.filter(m=>m.type==='saida').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id)).slice(0,25);
+  const todasSaidas = state.movements.filter(m=>m.type==='saida').sort((a,b)=>b.date.localeCompare(a.date)||(b.id-a.id));
+  const {pageItems: recentes, totalPages, page: saidaPageAtual} = paginar(todasSaidas, saidaPage);
+  saidaPage = saidaPageAtual;
   document.getElementById('main').innerHTML = `
     <div class="card">
       <div class="row-2">
@@ -68,6 +73,7 @@ function renderSaidas(){
         <button class="btn btn-sm" onclick="exportarMovimentacoes('saida')">Exportar (.xlsx)</button>
     </div>
     ${recentes.length===0?'<div class="empty">Nenhuma saída registrada ainda</div>':recentes.map(m=>movementCard(m)).join('')}
+    ${pagerHTML(saidaPage, totalPages, 'saidaPage--; renderSaidas();', 'saidaPage++; renderSaidas();')}
   `;
 }
 
@@ -94,11 +100,13 @@ function movementCard(m){
 /* ---------- REQUISIÇÕES ---------- */
 function renderRequisicoes(){
   document.getElementById('view-title').textContent = 'Requisições';
-  const list = [...state.requisicoes].sort((a,b)=>{
+  const listaOrdenada = [...state.requisicoes].sort((a,b)=>{
     const order = {pendente:0, aprovada:1, atendida:2, cancelada:3};
     if(order[a.status]!==order[b.status]) return order[a.status]-order[b.status];
     return b.date.localeCompare(a.date);
   });
+  const {pageItems: list, totalPages, page: requisicaoPageAtual} = paginar(listaOrdenada, requisicaoPage);
+  requisicaoPage = requisicaoPageAtual;
   const podeCriar = isGestor();
   const formularioHTML = podeCriar ? `
     <div class="card">
@@ -121,6 +129,7 @@ function renderRequisicoes(){
     ${formularioHTML}
     <div class="section-label">Todas as requisições</div>
     ${list.length===0?'<div class="empty">Nenhuma requisição criada ainda</div>':list.map(r=>requisicaoCard(r)).join('')}
+    ${pagerHTML(requisicaoPage, totalPages, 'requisicaoPage--; renderRequisicoes();', 'requisicaoPage++; renderRequisicoes();')}
   `;
   document.getElementById('fab').innerHTML = '';
 }
@@ -161,11 +170,8 @@ function renderInventario(){
     state.items.filter(i=>i.category===cat).forEach(i=>ordered.push(i));
   });
 
-  const ITEMS_PER_PAGE = 7;
-  const totalPages = Math.max(1, Math.ceil(ordered.length / ITEMS_PER_PAGE));
-  if(inventarioPage > totalPages) inventarioPage = totalPages;
-  if(inventarioPage < 1) inventarioPage = 1;
-  const pageItems = ordered.slice((inventarioPage-1)*ITEMS_PER_PAGE, inventarioPage*ITEMS_PER_PAGE);
+  const {pageItems, totalPages, page: inventarioPageAtual} = paginar(ordered, inventarioPage);
+  inventarioPage = inventarioPageAtual;
 
   let rows = '';
   if(pageItems.length===0){
@@ -197,12 +203,7 @@ function renderInventario(){
     });
   }
 
-  const pager = totalPages>1 ? `
-    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
-      <button class="btn btn-sm" ${inventarioPage<=1?'disabled':''} onclick="inventarioPage--; renderInventario();">‹ Anterior</button>
-      <span class="hint">Página ${inventarioPage} de ${totalPages}</span>
-      <button class="btn btn-sm" ${inventarioPage>=totalPages?'disabled':''} onclick="inventarioPage++; renderInventario();">Próxima ›</button>
-    </div>` : '';
+  const pager = totalPages>1 ? pagerHTML(inventarioPage, totalPages, 'inventarioPage--; renderInventario();', 'inventarioPage++; renderInventario();') : '';
 
   document.getElementById('main').innerHTML = `
     <div class="card">

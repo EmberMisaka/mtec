@@ -11,11 +11,13 @@ function renderFornecedores(){
     }
 
     const fornecedores = state.fornecedores || [];
+    const {pageItems: fornecedoresPagina, totalPages, page: fornecedorPageAtual} = paginar(fornecedores, fornecedorPage);
+    fornecedorPage = fornecedorPageAtual;
     let list = '';
     if(fornecedores.length===0){
         list = `<div class="empty"><div class="big">🏢</div>Nenhum fornecedor cadastrado</div>`;
     } else {
-        fornecedores.forEach(f=>{
+        fornecedoresPagina.forEach(f=>{
             list += `<div class="card">
         <div class="item-row">
           <div style="min-width:0;">
@@ -35,6 +37,7 @@ function renderFornecedores(){
       <div class="metric"><div class="n">${fornecedores.length}</div><div class="l">fornecedores cadastrados</div></div>
     </div>
     ${list}
+    ${pagerHTML(fornecedorPage, totalPages, 'fornecedorPage--; renderFornecedores();', 'fornecedorPage++; renderFornecedores();')}
   `;
     document.getElementById('fab').innerHTML = `<button class="btn btn-primary" onclick="openFornecedorModal(null)">+ Novo fornecedor</button>`;
 }

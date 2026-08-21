@@ -23,11 +23,13 @@ function renderUsuarios(){
   }
 
   const usuarios = state.usuarios || [];
+  const {pageItems: usuariosPagina, totalPages, page: usuarioPageAtual} = paginar(usuarios, usuarioPage);
+  usuarioPage = usuarioPageAtual;
   let list = '';
   if(usuarios.length===0){
     list = `<div class="empty"><div class="big">👤</div>Nenhum usuário cadastrado</div>`;
   } else {
-    usuarios.forEach(u=>{
+    usuariosPagina.forEach(u=>{
       const souEu = usuarioAtual && usuarioAtual.id === u.id;
       list += `<div class="card">
         <div class="item-row">
@@ -47,6 +49,7 @@ function renderUsuarios(){
       <div class="metric"><div class="n">${usuarios.length}</div><div class="l">usuários cadastrados</div></div>
     </div>
     ${list}
+    ${pagerHTML(usuarioPage, totalPages, 'usuarioPage--; renderUsuarios();', 'usuarioPage++; renderUsuarios();')}
   `;
   document.getElementById('fab').innerHTML = `<button class="btn btn-primary" onclick="openUsuarioModal()">+ Novo usuário</button>`;
 }

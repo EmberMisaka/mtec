@@ -26,10 +26,38 @@ let requisicaoItens = [];
 let inventarioPage = 1;
 let inventoryResponsible = '';
 let inventoryCounts = {};
+let entradaPage = 1;
+let saidaPage = 1;
+let requisicaoPage = 1;
+let usuarioPage = 1;
+let fornecedorPage = 1;
 
 function todayISO(){ return new Date().toISOString().slice(0,10); }
 function fmtDate(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return d+'/'+m+'/'+y; }
 function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- PAGINAÇÃO ----------
+   Toda listagem do app usa este helper: no máximo 7 itens por página. */
+const ITEMS_PER_PAGE = 3;
+
+function paginar(lista, page){
+  const totalPages = Math.max(1, Math.ceil(lista.length / ITEMS_PER_PAGE));
+  const paginaValida = Math.min(Math.max(page, 1), totalPages);
+  return {
+    pageItems: lista.slice((paginaValida-1)*ITEMS_PER_PAGE, paginaValida*ITEMS_PER_PAGE),
+    totalPages,
+    page: paginaValida
+  };
+}
+
+function pagerHTML(page, totalPages, onPrev, onNext){
+  if(totalPages<=1) return '';
+  return `<div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
+    <button class="btn btn-sm" ${page<=1?'disabled':''} onclick="${onPrev}">‹ Anterior</button>
+    <span class="hint">Página ${page} de ${totalPages}</span>
+    <button class="btn btn-sm" ${page>=totalPages?'disabled':''} onclick="${onNext}">Próxima ›</button>
+  </div>`;
+}
 
 /* ---------- CAMADA HTTP ----------
    Ponto único de conversa com o backend. Toda função de api/*.js passa por aqui. */
@@ -186,9 +214,11 @@ function renderUserBadge(){
   `;
 }
 function setTab(id){
-  if(id==='entradas') entradaItens = [];
-  if(id==='saidas') saidaItens = [];
-  if(id==='requisicoes') requisicaoItens = [];
+  if(id==='entradas') { entradaItens = []; entradaPage = 1; }
+  if(id==='saidas') { saidaItens = []; saidaPage = 1; }
+  if(id==='requisicoes') { requisicaoItens = []; requisicaoPage = 1; }
+  if(id==='fornecedores') fornecedorPage = 1;
+  if(id==='usuarios') usuarioPage = 1;
   currentTab = id;
   render();
 }
